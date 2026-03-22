@@ -45,3 +45,18 @@ class User(db.Model):
             "payout_account_id": self.payout_account_id,
             "provider_business_name": self.provider_business_name
         }
+
+# This table below stores:
+# the idempotency key
+# hash of the request
+# the response that was returned
+
+class IdempotencyRecord(db.Model):
+    __tablename__ = "idempotency_records"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    idem_key = db.Column(db.String(100), nullable=False, unique=True)
+    request_hash = db.Column(db.String(64), nullable=False)
+    response_body = db.Column(db.Text, nullable=False)
+    status_code = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
