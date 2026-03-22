@@ -1,9 +1,60 @@
+import json
+import re
+import hashlib
 from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import IntegrityError
 from app.extensions import db
-from app.models import User
+from app.models import User, IdempotencyRecord
 
 user_bp = Blueprint("user_bp", __name__)
+
+EMAIL_REGEX = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+VALID_ROLES = ["customer", "provider"]
+VALID_SUBSCRIPTION_STATUSES = ["ACTIVE", "INACTIVE"]
+
+
+def validate_user_payload(data, is_update=False):
+    if not data:
+        return "request body must be JSON"
+
+    if not is_update:
+        required_fields = ["name", "email", "role"]
+        for field in required_fields:
+            if field not in data:
+                return f"{field} is required"
+
+    if "email" in data and not re.match(EMAIL_REGEX, data["email"]):
+        return "invalid email format"
+
+    if "role" in data and data["role"] not in VALID_ROLES:
+        return "role must be customer or provider"
+
+    if "subscription_status" in data and data["subscription_status"] not in VALID_SUBSCRIPTION_STATUSES:
+        return "subscription_status must be ACTIVE or INACTIVE"
+
+    role = data.get("role")
+
+    # If creating or updating a provider, require provider fields
+    if role == "provider":
+        if not data.get("payout_account_id"):
+            return "payout_account_id is required for provider"
+        if not data.get("provider_business_name"):
+            return "provider_business_name is required for provider"
+
+    # If creating/updating a customer, block provider-only fields
+    if role == "customer":
+        if data.get("payout_account_id") is not None:
+            return "payout_account_id is only allowed for provider"
+        if data.get("provider_business_name") is not None:
+            return "provider_business_name is only allowed for provider"
+
+    return None
+
+
+def build_request_hash(data):
+    normalized = json.dumps(data, sort_keys=True)
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
 
 @user_bp.route("/health", methods=["GET"])
 def health():
@@ -32,6 +83,11 @@ def create_user():
     consumes:
       - application/json
     parameters:
+      - name: Idempotency-Key
+        in: header
+        type: string
+        required: false
+        description: Optional idempotency key to prevent duplicate user creation
       - in: body
         name: body
         required: true
@@ -69,20 +125,27 @@ def create_user():
       400:
         description: Invalid request
       409:
-        description: Email already exists
+        description: Email already exists or idempotency key reused incorrectly
     """
     data = request.get_json()
+    validation_error = validate_user_payload(data, is_update=False)
 
-    if not data:
-        return jsonify({"error": "request body must be JSON"}), 400
+    if validation_error:
+        return jsonify({"error": validation_error}), 400
 
-    required_fields = ["name", "email", "role"]
-    for field in required_fields:
-        if field not in data:
-            return jsonify({"error": f"{field} is required"}), 400
+    idem_key = request.headers.get("Idempotency-Key")
 
-    if data["role"] not in ["customer", "provider"]:
-        return jsonify({"error": "role must be customer or provider"}), 400
+    if idem_key:
+        request_hash = build_request_hash(data)
+        existing_record = IdempotencyRecord.query.filter_by(idem_key=idem_key).first()
+
+        if existing_record:
+            if existing_record.request_hash != request_hash:
+                return jsonify({
+                    "error": "idempotency key was already used with a different request"
+                }), 409
+
+            return jsonify(json.loads(existing_record.response_body)), existing_record.status_code
 
     user = User(
         name=data["name"],
@@ -97,7 +160,22 @@ def create_user():
     try:
         db.session.add(user)
         db.session.commit()
-        return jsonify(user.to_dict()), 201
+
+        response_payload = user.to_dict()
+        status_code = 201
+
+        if idem_key:
+            record = IdempotencyRecord(
+                idem_key=idem_key,
+                request_hash=build_request_hash(data),
+                response_body=json.dumps(response_payload),
+                status_code=status_code
+            )
+            db.session.add(record)
+            db.session.commit()
+
+        return jsonify(response_payload), status_code
+
     except IntegrityError:
         db.session.rollback()
         return jsonify({"error": "email already exists"}), 409
@@ -163,6 +241,9 @@ def update_user(user_id):
             phone:
               type: string
               example: 98765432
+            role:
+              type: string
+              example: customer
             subscription_status:
               type: string
               example: ACTIVE
@@ -192,12 +273,28 @@ def update_user(user_id):
     if not data:
         return jsonify({"error": "request body must be JSON"}), 400
 
-    user.name = data.get("name", user.name)
-    user.email = data.get("email", user.email)
-    user.phone = data.get("phone", user.phone)
-    user.subscription_status = data.get("subscription_status", user.subscription_status)
-    user.payout_account_id = data.get("payout_account_id", user.payout_account_id)
-    user.provider_business_name = data.get("provider_business_name", user.provider_business_name)
+    # merge current user data with update payload so validation sees final state
+    merged_data = {
+        "name": data.get("name", user.name),
+        "email": data.get("email", user.email),
+        "phone": data.get("phone", user.phone),
+        "role": data.get("role", user.role),
+        "subscription_status": data.get("subscription_status", user.subscription_status),
+        "payout_account_id": data.get("payout_account_id", user.payout_account_id),
+        "provider_business_name": data.get("provider_business_name", user.provider_business_name),
+    }
+
+    validation_error = validate_user_payload(merged_data, is_update=True)
+    if validation_error:
+        return jsonify({"error": validation_error}), 400
+
+    user.name = merged_data["name"]
+    user.email = merged_data["email"]
+    user.phone = merged_data["phone"]
+    user.role = merged_data["role"]
+    user.subscription_status = merged_data["subscription_status"]
+    user.payout_account_id = merged_data["payout_account_id"]
+    user.provider_business_name = merged_data["provider_business_name"]
 
     try:
         db.session.commit()
@@ -208,7 +305,6 @@ def update_user(user_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
-
 
 
 @user_bp.route("/users/<int:user_id>/contact", methods=["GET"])
@@ -264,9 +360,4 @@ def get_provider_payout_details(provider_id):
 
     return jsonify(provider.to_payout_dict()), 200
 
-# Check if it works
-@user_bp.route("/", methods=["GET"])
-def root():
-    return {
-        "message": "User microservice is running"
-    }, 200
+
