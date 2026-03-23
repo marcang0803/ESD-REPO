@@ -18,10 +18,11 @@ def on_class_completed(ch, method, properties, body):
     pay_res = requests.post("http://payment-service/process_payout", json=payment_payload)
     pay_status = pay_res.json()
 
-    requests.post("http://notification-service/notify", json={
-        "email": provider_details['email'],
-        "status": pay_status['status']
-    })
+    # requests.post("http://notification-service/notify", json={
+    #     "email": provider_details['email'],
+    #     "status": pay_status['status']
+    # })  CHANGE TO OUTSYSTEMS link here
+
 
 
 #rabbitMQ setup
