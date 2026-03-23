@@ -16,7 +16,7 @@ class SessionManager:
             self.id_key = generate_key()
             return self.start_time, self.id_key
         
-        # self.start_time to be labelled as session time
+        
         return self.start_time, self.id_key
 
 

@@ -22,7 +22,7 @@ def provide_payout():
         stripe.api_key = stripe_config.api_key
         # USE idem_key to prevent double-charging/double-payouts
         transfer = stripe.Transfer.create(
-            amount=int(amount * 100),
+            amount=int(float(amount) * 100),
             currency="sgd",
             destination=provider_account,
             idempotency_key=idempt_key
