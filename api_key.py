@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv("key.env")
 
 class StripeAPI:
-    def __init__(self, api_key):  
+    def __init__(self):  
         self._api_key = os.getenv("STRIPE_KEY", "")
 
     @property

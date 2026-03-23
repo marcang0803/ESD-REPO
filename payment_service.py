@@ -7,6 +7,9 @@ stripe_config = StripeAPI()
 
 @app.route('/process_payout', methods=['POST'])
 
+# -- ADD database elements here --
+
+
 def provide_payout():
     data = request.get_json()
 
