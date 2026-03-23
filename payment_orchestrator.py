@@ -6,7 +6,8 @@ def on_class_completed(ch, method, properties, body):
     event_data = json.loads(body)
     class_id = event_data['classId']
 
-    user_res =  requests.get(f"http://user-service/provider/{event_data['providerId']}")
+    user_res =  requests.get(f"http://localhost:5002/provider/{event_data['providerId']}")
+    # UPDATE link accordingly
     provider_details = user_res.json()
 
     payment_payload = {
@@ -15,7 +16,8 @@ def on_class_completed(ch, method, properties, body):
         "idem_key": event_data['idempotency_key']
     }
 
-    pay_res = requests.post("http://payment-service/process_payout", json=payment_payload)
+    pay_res = requests.post("http://localhost:5001/process_payout", json=payment_payload)
+    # UPDATE link accordingly
     pay_status = pay_res.json()
 
     # requests.post("http://notification-service/notify", json={
