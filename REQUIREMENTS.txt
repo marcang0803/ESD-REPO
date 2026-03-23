@@ -1,1 +1,1 @@
-Python modules required: stripe, uuid, argon2
+Python modules required: stripe, uuid, argon2, dotenv, flask

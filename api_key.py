@@ -16,6 +16,6 @@ class StripeAPI:
     def api_key(self, value):
         # Set api_key
         if not value.startswith("sk_"):
-            raise ValueError("Invalid Stripe API key format.")
+            raise ValueError("Invalid Stripe API key.")
         self._api_key = value
     
