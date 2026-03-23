@@ -36,6 +36,8 @@ def provide_payout():
     
     except stripe.error.StripeError as e:
         return jsonify({"status": "fail", "error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"status": "fail", "error": "Internal Server Error"}), 500
     
 
 if __name__ == '__main__':
