@@ -6,6 +6,8 @@ load_dotenv("key.env")
 class StripeAPI:
     def __init__(self):  
         self._api_key = os.getenv("STRIPE_KEY", "")
+        if not self._api_key:
+            raise ValueError("STRIPE_KEY not found in key.env")
 
     @property
     def api_key(self):

@@ -10,7 +10,7 @@ def on_class_completed(ch, method, properties, body):
     provider_details = user_res.json()
 
     payment_payload = {
-        "provider_id": provider_details['stripe_account_id'],
+        "provider_account": provider_details['stripe_account_id'],
         "amount": event_data['totalCreditsUsed'],
         "idem_key": event_data['idempotency_key']
     }
