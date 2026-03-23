@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv("key.env")
 
 class StripeAPI:
     def __init__(self, api_key):  
