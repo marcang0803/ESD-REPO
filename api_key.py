@@ -1,7 +1,8 @@
+import os
+
 class StripeAPI:
-    def __init__(self, api_key):
-        
-        self._api_key = api_key
+    def __init__(self, api_key):  
+        self._api_key = os.getenv("STRIPE_KEY", "")
 
     @property
     def api_key(self):
