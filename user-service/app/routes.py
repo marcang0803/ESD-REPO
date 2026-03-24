@@ -63,9 +63,15 @@ def health():
     ---
     tags:
       - Health
+    produces:
+      - application/json
     responses:
       200:
         description: Service is up
+        examples:
+          application/json:
+            service: user-service
+            status: UP
     """
     return jsonify({
         "service": "user-service",
@@ -82,12 +88,15 @@ def create_user():
       - Users
     consumes:
       - application/json
+    produces:
+      - application/json
     parameters:
       - name: Idempotency-Key
         in: header
         type: string
         required: false
         description: Optional idempotency key to prevent duplicate user creation
+        example: test-key-001
       - in: body
         name: body
         required: true
@@ -100,32 +109,56 @@ def create_user():
           properties:
             name:
               type: string
-              example: Alice Tan
+              example: Rachel Tan
             email:
               type: string
-              example: alice@example.com
+              example: rachel.tan@example.com
             phone:
               type: string
               example: 91234567
             role:
               type: string
+              enum:
+                - customer
+                - provider
               example: customer
             subscription_status:
               type: string
+              enum:
+                - ACTIVE
+                - INACTIVE
               example: ACTIVE
             payout_account_id:
               type: string
-              example: acct_provider_001
+              example: PAYNOW-92345678
             provider_business_name:
               type: string
               example: Zen Yoga Studio
     responses:
       201:
         description: User created successfully
+        examples:
+          application/json:
+            id: 1
+            name: Rachel Tan
+            email: rachel.tan@example.com
+            phone: 91234567
+            role: customer
+            subscription_status: ACTIVE
+            provider_business_name: null
+            payout_account_id: null
+            created_at: "2026-03-24T09:46:57"
+            updated_at: "2026-03-24T09:46:57"
       400:
         description: Invalid request
+        examples:
+          application/json:
+            error: invalid email format
       409:
         description: Email already exists or idempotency key reused incorrectly
+        examples:
+          application/json:
+            error: email already exists
     """
     data = request.get_json()
     validation_error = validate_user_payload(data, is_update=False)
@@ -191,6 +224,8 @@ def get_user(user_id):
     ---
     tags:
       - Users
+    produces:
+      - application/json
     parameters:
       - name: user_id
         in: path
@@ -200,8 +235,23 @@ def get_user(user_id):
     responses:
       200:
         description: User found
+        examples:
+          application/json:
+            id: 2
+            name: Daniel Lim
+            email: daniel.lim@example.com
+            phone: 91234567
+            role: provider
+            subscription_status: ACTIVE
+            provider_business_name: Zen Yoga Studio
+            payout_account_id: PAYNOW-92345678
+            created_at: "2026-03-22T11:19:52"
+            updated_at: "2026-03-24T09:48:10"
       404:
         description: User not found
+        examples:
+          application/json:
+            error: user not found
     """
     user = User.query.get(user_id)
 
@@ -220,6 +270,8 @@ def update_user(user_id):
       - Users
     consumes:
       - application/json
+    produces:
+      - application/json
     parameters:
       - name: user_id
         in: path
@@ -234,34 +286,61 @@ def update_user(user_id):
           properties:
             name:
               type: string
-              example: Alice Tan Updated
+              example: Daniel Lim
             email:
               type: string
-              example: alice_updated@example.com
+              example: daniel.lim@example.com
             phone:
               type: string
-              example: 98765432
+              example: 91234567
             role:
               type: string
-              example: customer
+              enum:
+                - customer
+                - provider
+              example: provider
             subscription_status:
               type: string
+              enum:
+                - ACTIVE
+                - INACTIVE
               example: ACTIVE
             payout_account_id:
               type: string
-              example: acct_provider_001
+              example: PAYNOW-92345678
             provider_business_name:
               type: string
               example: Zen Yoga Studio
     responses:
       200:
         description: User updated successfully
+        examples:
+          application/json:
+            id: 2
+            name: Daniel Lim
+            email: daniel.lim@example.com
+            phone: 91234567
+            role: provider
+            subscription_status: ACTIVE
+            provider_business_name: Zen Yoga Studio
+            payout_account_id: PAYNOW-92345678
+            created_at: "2026-03-22T11:19:52"
+            updated_at: "2026-03-24T09:48:10"
       400:
         description: Invalid request
+        examples:
+          application/json:
+            error: payout_account_id is required for provider
       404:
         description: User not found
+        examples:
+          application/json:
+            error: user not found
       409:
         description: Email already exists
+        examples:
+          application/json:
+            error: email already exists
     """
     user = User.query.get(user_id)
 
@@ -314,6 +393,8 @@ def get_user_contact(user_id):
     ---
     tags:
       - Users
+    produces:
+      - application/json
     parameters:
       - name: user_id
         in: path
@@ -323,8 +404,17 @@ def get_user_contact(user_id):
     responses:
       200:
         description: Contact details found
+        examples:
+          application/json:
+            id: 1
+            name: Rachel Tan
+            email: rachel.tan@example.com
+            phone: 91234567
       404:
         description: User not found
+        examples:
+          application/json:
+            error: user not found
     """
     user = User.query.get(user_id)
 
@@ -341,6 +431,8 @@ def get_provider_payout_details(provider_id):
     ---
     tags:
       - Providers
+    produces:
+      - application/json
     parameters:
       - name: provider_id
         in: path
@@ -350,8 +442,18 @@ def get_provider_payout_details(provider_id):
     responses:
       200:
         description: Provider payout details found
+        examples:
+          application/json:
+            id: 2
+            name: Daniel Lim
+            email: daniel.lim@example.com
+            provider_business_name: Zen Yoga Studio
+            payout_account_id: PAYNOW-92345678
       404:
         description: Provider not found
+        examples:
+          application/json:
+            error: provider not found
     """
     provider = User.query.filter_by(id=provider_id, role="provider").first()
 
@@ -359,5 +461,3 @@ def get_provider_payout_details(provider_id):
         return jsonify({"error": "provider not found"}), 404
 
     return jsonify(provider.to_payout_dict()), 200
-
-
