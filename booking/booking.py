@@ -37,10 +37,10 @@ db = SQLAlchemy(app)
 app.config["SWAGGER"] = {
     "title": "Booking Microservice API",
     "version": 1.0,
-    "openapi": "3.0.2",
+    "uiversion": 3,
     "description": "Manages booking records for users and classes with SGT timestamps.",
 }
-swagger = Swagger(app)
+swagger = Swagger(app, template={"swagger": "2.0"})
 
 
 class Booking(db.Model):
@@ -73,11 +73,28 @@ def get_all_bookings():
     ---
     tags:
       - Booking
+    produces:
+      - application/json
     responses:
       200:
         description: Booking records retrieved successfully
+        examples:
+          application/json:
+            code: 200
+            data:
+              - booking_id: 1
+                user_id: 101
+                class_id: 501
+                status: booked
+                booked_at: '2026-03-24T10:30:00+08:00'
+                cancelled_at: null
+                completed_at: null
       404:
         description: No booking records found
+        examples:
+          application/json:
+            code: 404
+            message: No booking records found.
     """
     query = db.select(Booking).order_by(Booking.booking_id)
     bookings = db.session.scalars(query).all()
@@ -95,17 +112,34 @@ def get_booking(booking_id):
     ---
     tags:
       - Booking
+    produces:
+      - application/json
     parameters:
-      - in: path
-        name: booking_id
-        schema:
-          type: integer
+      - name: booking_id
+        in: path
+        type: integer
         required: true
+        example: 1
     responses:
       200:
         description: Booking record retrieved successfully
+        examples:
+          application/json:
+            code: 200
+            data:
+              booking_id: 1
+              user_id: 101
+              class_id: 501
+              status: booked
+              booked_at: '2026-03-24T10:30:00+08:00'
+              cancelled_at: null
+              completed_at: null
       404:
         description: Booking record not found
+        examples:
+          application/json:
+            code: 404
+            message: Booking 1 not found.
     """
     booking = db.session.get(Booking, booking_id)
 
@@ -122,13 +156,60 @@ def create_booking():
     ---
     tags:
       - Booking
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - user_id
+            - class_id
+            - status
+          properties:
+            user_id:
+              type: integer
+              example: 101
+            class_id:
+              type: integer
+              example: 501
+            status:
+              type: string
+              enum:
+                - booked
+              example: booked
     responses:
       201:
         description: Booking created successfully
+        examples:
+          application/json:
+            code: 201
+            data:
+              booking_id: 1
+              user_id: 101
+              class_id: 501
+              status: booked
+              booked_at: '2026-03-24T10:30:00+08:00'
+              cancelled_at: null
+              completed_at: null
       400:
         description: Validation error or invalid JSON body
+        examples:
+          application/json:
+            code: 400
+            message: Validation error.
+            errors:
+              - status must be booked.
       500:
         description: Internal server error
+        examples:
+          application/json:
+            code: 500
+            message: 'Error creating booking: database unavailable'
     """
     data = request.get_json(silent=True)
 
@@ -190,21 +271,64 @@ def update_booking(booking_id):
     ---
     tags:
       - Booking
+    consumes:
+      - application/json
+    produces:
+      - application/json
     parameters:
-      - in: path
-        name: booking_id
-        schema:
-          type: integer
+      - name: booking_id
+        in: path
+        type: integer
         required: true
+        example: 1
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - status
+          properties:
+            status:
+              type: string
+              enum:
+                - cancelled
+                - completed
+              example: completed
     responses:
       200:
         description: Booking updated successfully
+        examples:
+          application/json:
+            code: 200
+            data:
+              booking_id: 1
+              user_id: 101
+              class_id: 501
+              status: completed
+              booked_at: '2026-03-24T10:30:00+08:00'
+              cancelled_at: null
+              completed_at: '2026-03-24T11:15:00+08:00'
       400:
         description: Validation error or invalid JSON body
+        examples:
+          application/json:
+            code: 400
+            message: Validation error.
+            errors:
+              - status must be either cancelled or completed.
       404:
         description: Booking record not found
+        examples:
+          application/json:
+            code: 404
+            message: Booking 1 not found.
       500:
         description: Internal server error
+        examples:
+          application/json:
+            code: 500
+            message: 'Error updating booking: database unavailable'
     """
     data = request.get_json(silent=True)
 
