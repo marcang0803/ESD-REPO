@@ -210,9 +210,9 @@ http://localhost:5010/apidocs
 ## Integration Notes
 
 Used by:
-Booking Service → retrieves contact details
-Payment Service → retrieves payout details
-Notification Service → retrieves contact details
+* Booking Service → retrieves contact details
+* Payment Service → retrieves payout details
+* Notification Service → retrieves contact details
 
 ## Notes
 
