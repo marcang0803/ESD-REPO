@@ -1,0 +1,43 @@
+services:
+  wallet-db:
+    image: mysql:8.0
+    container_name: wallet-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: wallet_db
+      MYSQL_USER: wallet_user
+      MYSQL_PASSWORD: wallet_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - wallet_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uwallet_user", "-pwallet_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  wallet-service:
+    build: .
+    container_name: wallet-service
+    restart: unless-stopped
+    depends_on:
+      wallet-db:
+        condition: service_healthy
+    environment:
+      MYSQL_HOST: wallet-db
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: wallet_db
+      MYSQL_USER: wallet_user
+      MYSQL_PASSWORD: wallet_pass
+      DATABASE_URL: mysql+pymysql://wallet_user:wallet_pass@wallet-db:3306/wallet_db
+      INITIAL_CREDITS: 1000
+      REST_PORT: 5000
+      GRPC_PORT: 50051
+    ports:
+      - "5000:5000"
+      - "50051:50051"
+
+volumes:
+  wallet_db_data:
