@@ -20,10 +20,13 @@ def on_class_completed(ch, method, properties, body):
     # UPDATE link accordingly
     pay_status = pay_res.json()
 
-    # requests.post("http://notification-service/notify", json={
-    #     "email": provider_details['email'],
-    #     "status": pay_status['status']
-    # })  CHANGE TO OUTSYSTEMS link here
+    OUTSYSTEMS_URL = "https://personal-rx8tuqla.outsystemscloud.com/Notifications_Microservice/rest/InternalNotificationAPI/TriggerPayoutEmail"
+    
+    requests.post(OUTSYSTEMS_URL, json={
+        "email": provider_details['email'],
+        "amount" : pay_status['amount'],
+        "status": pay_status['status']
+    })  
 
 
 
