@@ -1,0 +1,1 @@
+Python modules required: stripe, uuid, argon2, dotenv, flask, pika
