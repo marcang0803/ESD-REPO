@@ -1,0 +1,31 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: user-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: user_service_db
+    ports:
+      - "3340:3306"
+    volumes:
+      - mysql_user_data:/var/lib/mysql
+
+  user-service:
+    build: .
+    container_name: user-service
+    restart: always
+    depends_on:
+      - mysql
+    ports:
+      - "5010:5001"
+    environment:
+      PORT: 5001
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: user_service_db
+
+volumes:
+  mysql_user_data:
