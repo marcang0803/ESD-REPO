@@ -1,0 +1,35 @@
+services:
+  booking-db:
+    image: mysql:8.0
+    container_name: booking_db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: booking
+    ports:
+      - "3310:3306"
+    volumes:
+      - booking_db_data:/var/lib/mysql
+      - ./booking/booking.sql:/docker-entrypoint-initdb.d/booking.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: always
+
+  booking-service:
+    build:
+      context: ./booking
+    container_name: booking_service
+    ports:
+      - "6005:5000"
+    environment:
+      DATABASE_URL: mysql+mysqlconnector://root:root@booking-db:3306/booking
+    depends_on:
+      booking-db:
+        condition: service_healthy
+    restart: always
+
+volumes:
+  booking_db_data:
