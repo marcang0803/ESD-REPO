@@ -1,0 +1,13 @@
+export { default as LandingPage } from './LandingPage';
+export { default as Login } from './Login';
+export { default as UserDashboard } from './UserDashboard';
+export { default as BrowseClasses } from './BrowseClasses';
+export { default as ClassDetails } from './ClassDetails';
+export { default as MyBookings } from './MyBookings';
+export { default as Wallet } from './Wallet';
+export { default as Profile } from './Profile';
+export { default as ProviderDashboard } from './ProviderDashboard';
+export { default as CreateClass } from './CreateClass';
+export { default as ManageClasses } from './ManageClasses';
+export { default as ProviderPayouts } from './ProviderPayouts';
+export { default as AdminDashboard } from './AdminDashboard';
