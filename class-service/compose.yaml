@@ -1,0 +1,51 @@
+volumes:
+  class-db-data:
+
+networks:
+  esd-net:
+    driver: bridge
+    name: esd-net
+
+services:
+
+  #######################################
+  # Class Service: MySQL Database
+  #######################################
+  class-db:
+    image: mysql:8.0
+    restart: always
+    networks:
+      - esd-net
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: classservice
+    ports:
+      - "3303:3306"
+    volumes:
+      - class-db-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  #######################################
+  # Class Service: Flask REST API
+  #######################################
+  class-service:
+    build: .
+    restart: always
+    networks:
+      - esd-net
+    ports:
+      - "5006:5000"
+    environment:
+      DB_HOST: class-db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: password
+      DB_NAME: classservice
+    depends_on:
+      class-db:
+        condition: service_healthy
