@@ -1,6 +1,6 @@
 # Class Microservice
 
-A RESTful microservice for managing wellness classes and slot reservations, built with Python Flask and MySQL, containerized with Docker.
+A microservice for managing wellness classes and slot reservations, built with Python Flask and MySQL, containerized with Docker.
 
 ---
 
