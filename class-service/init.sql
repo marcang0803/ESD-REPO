@@ -16,9 +16,10 @@ CREATE TABLE IF NOT EXISTS Class (
 );
 
 CREATE TABLE IF NOT EXISTS ClassHold (
-    hold_id INT AUTO_INCREMENT PRIMARY KEY,
+    hold_id VARCHAR(50) PRIMARY KEY,
     class_id INT NOT NULL,
-    customer_id INT NOT NULL,
+    user_id INT NOT NULL,
+    idempotency_key VARCHAR(255) NOT NULL UNIQUE,
     expiry_time DATETIME NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (class_id) REFERENCES Class(class_id)
