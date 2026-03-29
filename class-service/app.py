@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flasgger import Swagger
 from datetime import datetime, timedelta
+import uuid
 import db
 
 app = Flask(__name__)
@@ -217,7 +218,7 @@ def create_class():
 
 # ─────────────────────────────────────────────
 # POST /classes/<classId>/reserve
-# Body: { customer_id }
+# Body: { user_id, idempotency_key }
 # ─────────────────────────────────────────────
 @app.route("/classes/<int:class_id>/reserve", methods=["POST"])
 def reserve_slot(class_id):
@@ -236,12 +237,17 @@ def reserve_slot(class_id):
         required: true
         schema:
           required:
-            - customer_id
+            - user_id
+            - idempotency_key
           properties:
-            customer_id:
+            user_id:
               type: integer
-              description: ID of the customer reserving the slot
+              description: ID of the user reserving the slot
               example: 1
+            idempotency_key:
+              type: string
+              description: Unique key to prevent duplicate reservations
+              example: "book-001"
     responses:
       201:
         description: Slot reserved successfully
@@ -251,24 +257,42 @@ def reserve_slot(class_id):
               type: boolean
               example: true
             hold_id:
-              type: integer
-              example: 1
+              type: string
+              example: "hold_123"
       400:
         description: No slots available or class not schedulable
       404:
         description: Class not found
+      409:
+        description: Duplicate request - idempotency key already used
       500:
         description: Internal server error
     """
     data = request.get_json()
 
-    if "customer_id" not in data:
-        return jsonify({"success": False, "message": "customer_id is required"}), 400
+    if "user_id" not in data:
+        return jsonify({"success": False, "message": "user_id is required"}), 400
+    if "idempotency_key" not in data:
+        return jsonify({"success": False, "message": "idempotency_key is required"}), 400
 
     try:
         conn = db.get_connection()
         cursor = conn.cursor(dictionary=True)
 
+        # Check for duplicate request using idempotency_key
+        cursor.execute(
+            "SELECT hold_id FROM ClassHold WHERE idempotency_key = %s",
+            (data["idempotency_key"],)
+        )
+        existing = cursor.fetchone()
+        if existing:
+            return jsonify({
+                "success": True,
+                "hold_id": existing["hold_id"],
+                "message": "Duplicate request - returning existing hold"
+            }), 200
+
+        # Get class and lock the row for update
         cursor.execute(
             "SELECT * FROM Class WHERE class_id = %s FOR UPDATE",
             (class_id,)
@@ -284,15 +308,17 @@ def reserve_slot(class_id):
         if cls["available_slots"] <= 0:
             return jsonify({"success": False, "message": "No slots available"}), 400
 
+        # Generate string hold_id
+        hold_id = f"hold_{uuid.uuid4().hex[:8]}"
         expiry_time = datetime.now() + timedelta(minutes=15)
+
         cursor.execute(
             """
-            INSERT INTO ClassHold (class_id, customer_id, expiry_time)
-            VALUES (%s, %s, %s)
+            INSERT INTO ClassHold (hold_id, class_id, user_id, idempotency_key, expiry_time)
+            VALUES (%s, %s, %s, %s, %s)
             """,
-            (class_id, data["customer_id"], expiry_time)
+            (hold_id, class_id, data["user_id"], data["idempotency_key"], expiry_time)
         )
-        hold_id = cursor.lastrowid
 
         cursor.execute(
             "UPDATE Class SET available_slots = available_slots - 1 WHERE class_id = %s",
@@ -335,9 +361,9 @@ def release_slot(class_id):
             - hold_id
           properties:
             hold_id:
-              type: integer
+              type: string
               description: ID of the hold to release
-              example: 1
+              example: "hold_123"
     responses:
       200:
         description: Slot released successfully
