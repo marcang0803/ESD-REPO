@@ -374,5 +374,9 @@ def update_booking(booking_id):
     return jsonify({"code": 200, "data": booking.json()}), 200
 
 
+# if __name__ == "__main__":
+#     app.run(host="0.0.0.0", port=5000, debug=True)
+
+# new change as port clashed 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=6005, debug=True)
