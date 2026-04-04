@@ -1,6 +1,8 @@
 from app.services.class_client import reserve_slot, release_slot
 from app.services.wallet_client import debit_credits, refund_credits
 from app.services.booking_client import create_booking
+from app.services.user_client import get_user_contact
+from app.services.publisher import publish_booking_confirmed
 
 
 class BookingOrchestrator:
@@ -44,12 +46,53 @@ class BookingOrchestrator:
             booking_response = create_booking(user_id, class_id)
             print("Booking response:", booking_response)
 
+
+            booking_id = (
+                booking_response.get("data", {}).get("booking_id")
+                )
+
+            if not booking_id:
+                raise Exception("No booking_id returned from Booking service")
+
+            print("STEP 4: Fetching user contact from User service...")
+            user_contact_response = get_user_contact(user_id)
+            print("User contact response:", user_contact_response)
+
+            email = user_contact_response.get("email")
+            if not email:
+                raise Exception("No email returned from User service")
+
+            event_payload = {
+                "booking_id": booking_id,
+                "user_id": user_id,
+                "class_id": class_id,
+                "email": email
+            }
+
+            print("STEP 5: Publishing booking.confirmed event to RabbitMQ...")
+            publish_success = publish_booking_confirmed(event_payload)
+
+            if not publish_success:
+                return {
+                    "success": True,
+                    "message": "Booking successful, but failed to publish booking.confirmed event",
+                    "booking": booking_response,
+                    "wallet": wallet_response,
+                    "class": class_response,
+                    "event_payload": event_payload,
+                    "event_published": False,
+                    "http_status": 201
+                }
+
             return {
                 "success": True,
-                "message": "Booking successful",
+                "message": "Booking successful and booking.confirmed event published",
                 "booking": booking_response,
                 "wallet": wallet_response,
                 "class": class_response,
+                "user_contact": user_contact_response,
+                "event_payload": event_payload,
+                "event_published": True,
                 "http_status": 201
             }
 

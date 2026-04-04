@@ -9,3 +9,12 @@ class Config:
     USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://localhost:5010")
     WALLET_SERVICE_URL = os.getenv("WALLET_SERVICE_URL", "http://localhost:5000")
     RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")
+    
+    RABBITMQ_HOST = "localhost"
+    RABBITMQ_PORT = 5672
+    RABBITMQ_USERNAME = "guest"
+    RABBITMQ_PASSWORD = "guest"
+
+    BOOKING_EXCHANGE = "booking_exchange"
+    BOOKING_EXCHANGE_TYPE = "topic"
+    BOOKING_ROUTING_KEY = "booking.confirmed"
