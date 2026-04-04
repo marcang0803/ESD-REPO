@@ -19,6 +19,7 @@ class BookingOrchestrator:
             if not hold_id:
                 raise Exception("No hold_id returned from Class service")
 
+
             print("STEP 2: Debiting wallet...")
             wallet_response = debit_credits(
                 user_id=user_id,
@@ -32,35 +33,51 @@ class BookingOrchestrator:
 
             if (not wallet_success) or (wallet_status not in ["processed", "already_processed"]):
                 print("Wallet debit failed. Releasing class hold...")
-                release_response = release_slot(class_id, hold_id)
-                print("Release response:", release_response)
+
+                release_slot(class_id, hold_id)
 
                 return {
                     "success": False,
-                    "message": "Wallet debit failed, class slot released",
-                    "wallet_response": wallet_response,
+                    "message": "Payment failed. Please try again.",
                     "http_status": 400
                 }
+
 
             print("STEP 3: Creating booking record...")
             booking_response = create_booking(user_id, class_id)
             print("Booking response:", booking_response)
 
+            if not booking_response.get("success"):
+                print("Booking failed. Rolling back...")
 
-            booking_id = (
-                booking_response.get("data", {}).get("booking_id")
+                # rollback class
+                release_slot(class_id, hold_id)
+
+                # rollback wallet
+                refund_credits(
+                    user_id=user_id,
+                    amount=1,
+                    transaction_id=f"{idempotency_key}-refund"
                 )
 
-            if not booking_id:
-                raise Exception("No booking_id returned from Booking service")
+                return {
+                    "success": False,
+                    "message": booking_response.get("message", "Booking failed"),
+                    "http_status": 400
+                }
 
-            print("STEP 4: Fetching user contact from User service...")
-            user_contact_response = get_user_contact(user_id)
-            print("User contact response:", user_contact_response)
+            booking_data = booking_response.get("data")
+            booking_id = booking_data.get("booking_id")
 
-            email = user_contact_response.get("email")
-            if not email:
-                raise Exception("No email returned from User service")
+
+            print("STEP 4: Fetching user contact...")
+            user_contact = get_user_contact(user_id)
+            print("User contact:", user_contact)
+
+            email = user_contact.get("email")
+
+
+            print("STEP 5: Publishing booking.confirmed event...")
 
             event_payload = {
                 "booking_id": booking_id,
@@ -69,64 +86,50 @@ class BookingOrchestrator:
                 "email": email
             }
 
-            print("STEP 5: Publishing booking.confirmed event to RabbitMQ...")
-            publish_success = publish_booking_confirmed(event_payload)
+            publish_booking_confirmed(event_payload)
 
-            if not publish_success:
-                return {
-                    "success": True,
-                    "message": "Booking successful, but failed to publish booking.confirmed event",
-                    "booking": booking_response,
-                    "wallet": wallet_response,
-                    "class": class_response,
-                    "event_payload": event_payload,
-                    "event_published": False,
-                    "http_status": 201
-                }
+            print("Booking event published successfully")
+
 
             return {
                 "success": True,
-                "message": "Booking successful and booking.confirmed event published",
-                "booking": booking_response,
+                "message": "Booking successful",
+                "booking": booking_data,
                 "wallet": wallet_response,
                 "class": class_response,
-                "user_contact": user_contact_response,
-                "event_payload": event_payload,
-                "event_published": True,
                 "http_status": 201
             }
 
         except Exception as e:
             print("Orchestrator error:", str(e))
 
-            # rollback only if class hold exists
+
+            # rollback class
             if hold_id:
                 try:
                     print("Rolling back class hold...")
-                    release_response = release_slot(class_id, hold_id)
-                    print("Release response:", release_response)
-                except Exception as release_error:
-                    print("Failed to release class hold during rollback:", str(release_error))
+                    release_slot(class_id, hold_id)
+                except Exception as err:
+                    print("Class rollback failed:", str(err))
 
-            # refund only if wallet debit had already succeeded
+            # rollback wallet
             if wallet_response:
                 try:
                     wallet_success = wallet_response.get("success", False)
                     wallet_status = wallet_response.get("status", "")
 
                     if wallet_success and wallet_status in ["processed", "already_processed"]:
-                        print("Rolling back wallet debit...")
-                        refund_response = refund_credits(
+                        print("Rolling back wallet...")
+                        refund_credits(
                             user_id=user_id,
                             amount=1,
                             transaction_id=f"{idempotency_key}-refund"
                         )
-                        print("Refund response:", refund_response)
-                except Exception as refund_error:
-                    print("Failed to refund wallet during rollback:", str(refund_error))
+                except Exception as err:
+                    print("Wallet rollback failed:", str(err))
 
             return {
                 "success": False,
-                "message": str(e),
+                "message": "Something went wrong. Please try again.",
                 "http_status": 500
             }

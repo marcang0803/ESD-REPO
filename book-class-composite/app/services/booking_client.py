@@ -12,5 +12,30 @@ def create_booking(user_id, class_id):
     }
 
     response = requests.post(url, json=payload, timeout=10)
-    response.raise_for_status()
-    return response.json()
+
+    try:
+        data = response.json()
+    except Exception:
+        return {
+            "success": False,
+            "message": "Invalid response from Booking service"
+        }
+
+    # HANDLE DUPLICATE (409)
+    if response.status_code == 409:
+        return {
+            "success": False,
+            "message": "User has already booked this class."
+        }
+
+    # HANDLE OTHER ERRORS
+    if response.status_code != 201:
+        return {
+            "success": False,
+            "message": data.get("message", "Booking failed")
+        }
+
+    return {
+        "success": True,
+        "data": data.get("data")
+    }
