@@ -31,5 +31,44 @@ services:
         condition: service_healthy
     restart: always
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: always
+
+  cancel-booking-composite:
+    build:
+      context: ./cancel-booking-composite
+    container_name: cancel_booking_composite
+    ports:
+      - "5004:5004"
+    environment:
+      BOOKING_SERVICE_URL: http://booking-service:5000
+      CLASS_SERVICE_URL: http://class-service:5000
+      USER_SERVICE_URL: http://user-service:5001
+      WALLET_GRPC_HOST: wallet-service
+      WALLET_GRPC_PORT: 50051
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: always
+
 volumes:
   booking_db_data:
+
