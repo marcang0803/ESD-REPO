@@ -3,6 +3,7 @@ from app.services.wallet_client import debit_credits, refund_credits
 from app.services.booking_client import create_booking
 from app.services.user_client import get_user_contact
 from app.services.publisher import publish_booking_confirmed
+import traceback
 
 
 class BookingOrchestrator:
@@ -101,8 +102,9 @@ class BookingOrchestrator:
             }
 
         except Exception as e:
-            print("Orchestrator error:", str(e))
-
+            print(" FULL ERROR:")
+            traceback.print_exc()
+            
 
             # rollback class
             if hold_id:
