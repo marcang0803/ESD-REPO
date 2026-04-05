@@ -499,5 +499,173 @@ def complete_class(class_id):
         conn.close()
 
 
+# ─────────────────────────────────────────────
+# GET /classes/<classId>
+# ─────────────────────────────────────────────
+@app.route("/classes/<int:class_id>", methods=["GET"])
+def get_class(class_id):
+    """
+    Get a single class by ID
+    ---
+    parameters:
+      - name: class_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the class to retrieve
+        example: 1
+    responses:
+      200:
+        description: Class found
+        schema:
+          properties:
+            success:
+              type: boolean
+              example: true
+            class:
+              type: object
+              properties:
+                class_id:
+                  type: integer
+                  example: 1
+                customer_id:
+                  type: integer
+                  example: 1
+                class_name:
+                  type: string
+                  example: "Yoga Basics"
+                date:
+                  type: string
+                  example: "2025-01-01"
+                start_time:
+                  type: string
+                  example: "10:00:00"
+                duration:
+                  type: integer
+                  example: 60
+                capacity:
+                  type: integer
+                  example: 20
+                available_slots:
+                  type: integer
+                  example: 15
+                status:
+                  type: string
+                  example: "Scheduled"
+                location:
+                  type: string
+                  example: "Studio A, Level 2"
+      404:
+        description: Class not found
+      500:
+        description: Internal server error
+    """
+    try:
+        conn = db.get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT class_id, customer_id, class_name, date, start_time,
+                   duration, capacity, available_slots, status, location
+            FROM Class
+            WHERE class_id = %s
+            """,
+            (class_id,)
+        )
+        cls = cursor.fetchone()
+
+        if not cls:
+            return jsonify({"success": False, "message": "Class not found"}), 404
+
+        cls["date"] = str(cls["date"])
+        cls["start_time"] = str(cls["start_time"])
+
+        return jsonify({"success": True, "class": cls}), 200
+
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# ─────────────────────────────────────────────
+# PUT /classes/<classId>/slots/increment
+# ─────────────────────────────────────────────
+@app.route("/classes/<int:class_id>/slots/increment", methods=["PUT"])
+def increment_slot(class_id):
+    """
+    Increment available_slots by 1 (used for cancellation)
+    ---
+    parameters:
+      - name: class_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the class to increment slot for
+        example: 1
+    responses:
+      200:
+        description: Slot incremented successfully
+        schema:
+          properties:
+            success:
+              type: boolean
+              example: true
+            message:
+              type: string
+              example: "Slot incremented successfully"
+            class_id:
+              type: integer
+              example: 1
+            available_slots:
+              type: integer
+              example: 16
+      400:
+        description: Slots already at capacity
+      404:
+        description: Class not found
+      500:
+        description: Internal server error
+    """
+    try:
+        conn = db.get_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute(
+            "SELECT * FROM Class WHERE class_id = %s FOR UPDATE",
+            (class_id,)
+        )
+        cls = cursor.fetchone()
+
+        if not cls:
+            return jsonify({"success": False, "message": "Class not found"}), 404
+
+        if cls["available_slots"] >= cls["capacity"]:
+            return jsonify({"success": False, "message": "Slots already at capacity"}), 400
+
+        cursor.execute(
+            "UPDATE Class SET available_slots = available_slots + 1 WHERE class_id = %s",
+            (class_id,)
+        )
+        conn.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Slot incremented successfully",
+            "class_id": class_id,
+            "available_slots": cls["available_slots"] + 1
+        }), 200
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    finally:
+        cursor.close()
+        conn.close()
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
