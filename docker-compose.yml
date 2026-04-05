@@ -245,7 +245,7 @@ services:
     environment:
       # Atomic service URLs (Docker container names as hostnames)
       CLASS_SERVICE_URL: http://class-service:5000
-      BOOKING_SERVICE_URL: http://booking-service:5000
+      BOOKING_SERVICE_URL: http://booking-service:6005
       USER_SERVICE_URL: http://user-service:5001
       WALLET_SERVICE_URL: http://wallet-service:5000
       # Wallet gRPC
