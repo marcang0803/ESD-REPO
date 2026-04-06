@@ -72,203 +72,44 @@ services:
         condition: service_healthy
     restart: always
 
-  # ─────────────────────────────────────────────
-  # Class Service
-  # ─────────────────────────────────────────────
-  class-db:
-    image: mysql:8.0
-    container_name: class_db
-    networks:
-      - esd-net
-    environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: classservice
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
     ports:
-      - "3303:3306"
-    volumes:
-      - class_db_data:/var/lib/mysql
-      - ./class-service/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 20s
     restart: always
 
-  class-service:
+  cancel-booking-composite:
     build:
-      context: ./class-service
-    container_name: class_service
-    networks:
-      - esd-net
+      context: ./cancel-booking-composite
+    container_name: cancel_booking_composite
     ports:
-      - "5006:5000"
+      - "5004:5004"
     environment:
-      DB_HOST: class-db
-      DB_PORT: 3306
-      DB_USER: root
-      DB_PASSWORD: password
-      DB_NAME: classservice
-    depends_on:
-      class-db:
-        condition: service_healthy
-    restart: always
-
-  # ─────────────────────────────────────────────
-  # User Service
-  # ─────────────────────────────────────────────
-  user-db:
-    image: mysql:8.0
-    container_name: user_db
-    networks:
-      - esd-net
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: user_service_db
-    ports:
-      - "3340:3306"
-    volumes:
-      - user_db_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
-    restart: always
-
-  user-service:
-    build:
-      context: ./user-service
-    container_name: user_service
-    networks:
-      - esd-net
-    ports:
-      - "5010:5001"
-    environment:
-      PORT: 5001
-      DB_USER: root
-      DB_PASSWORD: root
-      DB_HOST: user-db
-      DB_PORT: 3306
-      DB_NAME: user_service_db
-    depends_on:
-      user-db:
-        condition: service_healthy
-    restart: always
-
-  # ─────────────────────────────────────────────
-  # Wallet Service
-  # ─────────────────────────────────────────────
-  wallet-db:
-    image: mysql:8.0
-    container_name: wallet_db
-    networks:
-      - esd-net
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: wallet_db
-      MYSQL_USER: wallet_user
-      MYSQL_PASSWORD: wallet_pass
-    ports:
-      - "3307:3306"
-    volumes:
-      - wallet_db_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uwallet_user", "-pwallet_pass"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
-    restart: always
-
-  wallet-service:
-    build:
-      context: ./wallet-service
-    container_name: wallet_service
-    networks:
-      - esd-net
-    ports:
-      - "5000:5000"
-      - "50051:50051"
-    environment:
-      MYSQL_HOST: wallet-db
-      MYSQL_PORT: 3306
-      MYSQL_DATABASE: wallet_db
-      MYSQL_USER: wallet_user
-      MYSQL_PASSWORD: wallet_pass
-      DATABASE_URL: mysql+pymysql://wallet_user:wallet_pass@wallet-db:3306/wallet_db
-      INITIAL_CREDITS: 1000
-      REST_PORT: 5000
-      GRPC_PORT: 50051
-    depends_on:
-      wallet-db:
-        condition: service_healthy
-    restart: always
-
-  # ─────────────────────────────────────────────
-  # Notification Service (RabbitMQ consumer -> OutSystems Email)
-  # ─────────────────────────────────────────────
-  notification-service:
-    build:
-      context: ./notification-service
-    container_name: notification_service
-    networks:
-      - esd-net
-    environment:
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USERNAME: guest
-      RABBITMQ_PASSWORD: guest
-      BOOKING_EXCHANGE: booking_exchange
-      BOOKING_EXCHANGE_TYPE: topic
-      BOOKING_ROUTING_KEY: booking.confirmed
-      QUEUE_NAME: notification.booking.confirmed
-      OUTSYSTEMS_SEND_EMAIL_URL: https://personal-rx8tuqla.outsystemscloud.com/Notifications_Microservice/rest/Notification/SendEmail
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    restart: always
-
-  # ─────────────────────────────────────────────
-  # Book-a-Class Composite Microservice
-  # ─────────────────────────────────────────────
-  book-class-composite:
-    build:
-      context: ./book-class-composite
-    container_name: book_class_composite
-    networks:
-      - esd-net
-    ports:
-      - "5003:5003"
-    environment:
-      # Atomic service URLs (Docker container names as hostnames)
+      BOOKING_SERVICE_URL: http://booking-service:5000
       CLASS_SERVICE_URL: http://class-service:5000
-      BOOKING_SERVICE_URL: http://booking-service:6005
       USER_SERVICE_URL: http://user-service:5001
-      WALLET_SERVICE_URL: http://wallet-service:5000
-      # Wallet gRPC
       WALLET_GRPC_HOST: wallet-service
       WALLET_GRPC_PORT: 50051
-      # RabbitMQ
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
-      BOOKING_EXCHANGE: booking_exchange
-      BOOKING_EXCHANGE_TYPE: topic
-      BOOKING_ROUTING_KEY: booking.confirmed
     depends_on:
-      booking-service:
-        condition: service_started
-      class-service:
-        condition: service_started
-      user-service:
-        condition: service_started
-      wallet-service:
-        condition: service_started
       rabbitmq:
         condition: service_healthy
     restart: always
+
+volumes:
+  booking_db_data:
 
