@@ -35,7 +35,9 @@ def create_booking(user_id, class_id):
             "message": data.get("message", "Booking failed")
         }
 
+    # Booking service returns {"code": 201, "data": {...}}
+    booking_data = data.get("data")
     return {
         "success": True,
-        "data": data.get("data")
+        "data": booking_data
     }

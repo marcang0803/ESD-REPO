@@ -1,7 +1,46 @@
+networks:
+  esd-net:
+    driver: bridge
+    name: esd-net
+
+volumes:
+  booking_db_data:
+  class_db_data:
+  user_db_data:
+  wallet_db_data:
+
 services:
+
+  # ─────────────────────────────────────────────
+  # RabbitMQ (Messaging)
+  # ─────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    networks:
+      - esd-net
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+      start_period: 60s
+    restart: always
+
+  # ─────────────────────────────────────────────
+  # Booking Service
+  # ─────────────────────────────────────────────
   booking-db:
     image: mysql:8.0
     container_name: booking_db
+    networks:
+      - esd-net
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: booking
@@ -22,6 +61,8 @@ services:
     build:
       context: ./booking
     container_name: booking_service
+    networks:
+      - esd-net
     ports:
       - "6005:5000"
     environment:

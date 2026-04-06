@@ -7,6 +7,7 @@ orchestrator = BookingOrchestrator()
 
 @bookings_bp.route("/bookings", methods=["POST"])
 def create_booking():
+    print("Incoming request:", request.get_json())
     data = request.get_json() or {}
 
     user_id = data.get("user_id")
