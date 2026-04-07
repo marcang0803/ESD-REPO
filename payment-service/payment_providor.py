@@ -8,7 +8,7 @@ import requests
 RABBITMQ_HOST    = os.getenv("RABBITMQ_HOST", "localhost")
 RABBITMQ_PORT    = int(os.getenv("RABBITMQ_PORT", 5672))
 
-# FIX 1: Use env vars instead of hardcoded localhost — works both locally and inside Docker
+
 USER_SERVICE_URL    = os.getenv("USER_SERVICE_URL", "http://localhost:5003")
 PAYMENT_SERVICE_URL = os.getenv("PAYMENT_SERVICE_URL", "http://localhost:5001")
 
@@ -36,9 +36,7 @@ def on_class_completed(ch, method, properties, body):
     credits_used    = event_data.get("totalCreditsUsed", 0)
     idempotency_key = event_data.get("idempotency_key", f"payout-{class_id}")
 
-    # ── Step 1: Fetch provider payout details from User Service ──────────────
-    # FIX 2: Use the correct endpoint /providers/{id}/payout-details
-    #         (not the old standalone user.py /provider/{id} endpoint)
+    
     try:
         user_res = requests.get(
             f"{USER_SERVICE_URL}/providers/{provider_id}/payout-details",
@@ -51,8 +49,7 @@ def on_class_completed(ch, method, properties, body):
         ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
         return
 
-    # FIX 3: User service returns 'payout_account_id', NOT 'stripe_account_id'
-    #         The old user.py used 'stripe_account_id' — the real user-service uses 'payout_account_id'
+    
     payout_account  = provider_details.get("payout_account_id")
     provider_email  = provider_details.get("email")
     provider_name   = provider_details.get("name", "Provider")
@@ -62,11 +59,11 @@ def on_class_completed(ch, method, properties, body):
         ch.basic_ack(delivery_tag=method.delivery_tag)
         return
 
-    # ── Step 2: Calculate payout (apply 15% platform commission) ─────────────
+    #Payout Calculation
     net_amount = round(float(credits_used) * (1 - COMMISSION_RATE), 2)
     print(f"[PayProvider] Payout: {credits_used} credits → SGD {net_amount} after commission")
 
-    # ── Step 3: Call Payment Service to execute the Stripe transfer ──────────
+    
     payment_payload = {
         "provider_account": payout_account,
         "amount": credits_used,          # payment_service.py applies commission itself
@@ -88,8 +85,7 @@ def on_class_completed(ch, method, properties, body):
 
     print(f"[PayProvider] Payment result: {pay_status}")
 
-    # ── Step 4: Notify provider via OutSystems ────────────────────────────────
-    # FIX 4: payment_service now returns 'amount' — safe to read it here
+    
     notification_payload = {
         "email": provider_email,
         "amount": pay_status.get("amount", net_amount),
