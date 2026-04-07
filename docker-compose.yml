@@ -301,6 +301,14 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+      wallet-service:
+        condition: service_started
+      class-service:
+        condition: service_started
+      booking-service:
+        condition: service_started
+      user-service:
+        condition: service_started
     restart: always
 
   # ─────────────────────────────────────────────
