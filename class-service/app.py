@@ -2,6 +2,9 @@ from flask import Flask, request, jsonify
 from flasgger import Swagger
 from datetime import datetime, timedelta
 import uuid
+import os
+import json
+import pika
 import db
 
 app = Flask(__name__)
@@ -423,6 +426,43 @@ def release_slot(class_id):
 
 
 # ─────────────────────────────────────────────
+# RabbitMQ publisher helper
+# ─────────────────────────────────────────────
+def publish_class_completed(class_id, provider_id, total_bookings, total_credits_used):
+    """Publish a class.completed event to RabbitMQ so the Payment Service can trigger payout."""
+    try:
+        credentials = pika.PlainCredentials(
+            os.getenv("RABBITMQ_USERNAME", "guest"),
+            os.getenv("RABBITMQ_PASSWORD", "guest")
+        )
+        params = pika.ConnectionParameters(
+            host=os.getenv("RABBITMQ_HOST", "localhost"),
+            port=int(os.getenv("RABBITMQ_PORT", 5672)),
+            credentials=credentials
+        )
+        connection = pika.BlockingConnection(params)
+        channel = connection.channel()
+        channel.queue_declare(queue="class_completed", durable=True)
+        channel.basic_publish(
+            exchange="",
+            routing_key="class_completed",
+            body=json.dumps({
+                "classId": class_id,
+                "providerId": str(provider_id),
+                "totalBookings": total_bookings,
+                "totalCreditsUsed": total_credits_used,
+                "idempotency_key": f"payout-class-{class_id}"
+            }),
+            properties=pika.BasicProperties(delivery_mode=2)   # persistent message
+        )
+        connection.close()
+        print(f"[Class Service] Published class.completed for class_id={class_id}")
+    except Exception as e:
+        # Log but don't fail the HTTP response — payout can be retried separately
+        print(f"[Class Service] WARNING: failed to publish class.completed event: {e}")
+
+
+# ─────────────────────────────────────────────
 # POST /classes/<classId>/complete
 # ─────────────────────────────────────────────
 @app.route("/classes/<int:class_id>/complete", methods=["POST"])
@@ -483,11 +523,26 @@ def complete_class(class_id):
         )
         conn.commit()
 
+        # Derive payout figures from bookings (capacity - available_slots = booked seats)
+        total_bookings = cls["capacity"] - cls["available_slots"]
+        # Each booking costs 1 credit by default; adjust if your schema tracks actual credits
+        total_credits_used = total_bookings
+
+        # Publish event so Pay Provider / Payment Service can trigger the Stripe payout
+        publish_class_completed(
+            class_id=class_id,
+            provider_id=cls["customer_id"],
+            total_bookings=total_bookings,
+            total_credits_used=total_credits_used
+        )
+
         return jsonify({
             "success": True,
             "message": "Class marked as completed",
             "class_id": class_id,
-            "status": "Completed"
+            "status": "Completed",
+            "total_bookings": total_bookings,
+            "total_credits_used": total_credits_used
         }), 200
 
     except Exception as e:
