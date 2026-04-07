@@ -251,10 +251,10 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-      user-service:
-        condition: service_started
-      payment_service:
-        condition: service_started
+      # user-service:
+      #   condition: service_started
+      # payment_service:
+      #   condition: service_started
     restart: always
 
   # ─────────────────────────────────────────────
