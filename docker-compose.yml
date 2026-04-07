@@ -302,13 +302,13 @@ services:
       rabbitmq:
         condition: service_healthy
       wallet-service:
-        condition: service_started
+        condition: service_healthy
       class-service:
-        condition: service_started
+        condition: service_healthy
       booking-service:
-        condition: service_started
+        condition: service_healthy
       user-service:
-        condition: service_started
+        condition: service_healthy
     restart: always
 
   # ─────────────────────────────────────────────
@@ -335,5 +335,13 @@ services:
       RABBITMQ_PASSWORD: guest
     depends_on:
       rabbitmq:
+        condition: service_healthy
+      wallet-service:
+        condition: service_healthy
+      class-service:
+        condition: service_healthy
+      booking-service:
+        condition: service_healthy
+      user-service:
         condition: service_healthy
     restart: always
