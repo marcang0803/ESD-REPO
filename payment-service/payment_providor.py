@@ -84,7 +84,7 @@ def on_class_completed(ch, method, properties, body):
     
     notification_payload = {
         "email": provider_email,
-        "amount": pay_status.get("amount", net_amount),
+        "amount": pay_status.get("amount"),
         "status": pay_status.get("status", "unknown")
     }
 
