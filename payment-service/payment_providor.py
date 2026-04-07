@@ -59,11 +59,7 @@ def on_class_completed(ch, method, properties, body):
         ch.basic_ack(delivery_tag=method.delivery_tag)
         return
 
-    #Payout Calculation
-    net_amount = round(float(credits_used) * (1 - COMMISSION_RATE), 2)
-    print(f"[PayProvider] Payout: {credits_used} credits → SGD {net_amount} after commission")
-
-    
+   
     payment_payload = {
         "provider_account": payout_account,
         "amount": credits_used,          # payment_service.py applies commission itself
