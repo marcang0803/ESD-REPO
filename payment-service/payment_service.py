@@ -14,7 +14,7 @@ def provide_payout():
     amount = data.get("amount")
     idempt_key = data.get("idem_key")
 
-    # ── Input validation ──────────────────────────────────────────────────────
+    
     if not provider_account:
         return jsonify({"status": "fail", "error": "provider_account is required"}), 400
     if amount is None:
@@ -22,14 +22,14 @@ def provide_payout():
     if not idempt_key:
         return jsonify({"status": "fail", "error": "idem_key is required"}), 400
 
-    # Apply 15% platform commission
+  
     COMMISSION_RATE = 0.15
     net_amount = round(float(amount) * (1 - COMMISSION_RATE), 2)
 
     try:
         stripe.api_key = stripe_config.api_key
 
-        # idempotency_key prevents double-payouts if this endpoint is called twice
+        
         transfer = stripe.Transfer.create(
             amount=int(net_amount * 100),   # Stripe expects cents
             currency="sgd",
@@ -41,7 +41,7 @@ def provide_payout():
             "status": "success",
             "transfer_id": transfer.id,
             "message": "Payout successful",
-            # FIX: 'amount' was missing — payment_providor.py reads pay_status['amount']
+            
             "amount": net_amount,
             "commission_deducted": round(float(amount) * COMMISSION_RATE, 2)
         }), 200
