@@ -15,12 +15,12 @@ def _get_pool():
             "database": os.environ.get("DB_NAME", "classservice"),
         }
 
-    _pool = pooling.MySQLConnectionPool(
-        pool_name="class_pool",
-        pool_size=5,
-        **db_config
-    )
+        _pool = pooling.MySQLConnectionPool(
+            pool_name="class_pool",
+            pool_size=5,
+            **db_config
+        )
     return _pool
 
 def get_connection():
-    return _get_pool.get_connection()
+    return _get_pool().get_connection()
