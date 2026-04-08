@@ -126,6 +126,12 @@ services:
         condition: service_healthy
       class-db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: always
 
   # ─────────────────────────────────────────────
@@ -227,6 +233,12 @@ services:
     depends_on:
       wallet-db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: always
 
   # ─────────────────────────────────────────────
