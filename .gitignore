@@ -1,0 +1,23 @@
+# Root shared env files
+.env
+.env.local
+.env.*.local
+
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+frontend/package-lock.json
+frontend/yarn.lock
+
+# Frontend logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
