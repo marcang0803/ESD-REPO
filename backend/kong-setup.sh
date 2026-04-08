@@ -48,6 +48,17 @@ setup_service() {
     --data "strip_path=false" \
     > /dev/null
 
+  # 5. Enable CORS plugin for this service
+  curl -s -X POST "$KONG_ADMIN/services/${name}/plugins" \
+    --data "name=cors" \
+    --data "config.origins=*" \
+    --data "config.methods=GET,POST,PUT,DELETE,OPTIONS" \
+    --data "config.headers=Accept,Authorization,Content-Type,Origin" \
+    --data "config.exposed_headers=Authorization" \
+    --data "config.credentials=true" \
+    --data "config.max_age=3600" \
+    > /dev/null
+
   echo "  upstream: ${name}.upstream -> ${host}:${port}"
   echo "  route:    ${path}"
 }
