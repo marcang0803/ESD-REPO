@@ -722,9 +722,10 @@ def increment_slot(class_id):
         conn.close()
 
 
-if __name__ == "__main__":
-  @app.route("/health", methods=["GET"])
-  def health():
-    return jsonify({"status": "ok"}), 200
+@app.route("/health", methods=["GET"])
+def health():
+  return jsonify({"status": "ok"}), 200
 
-    app.run(host="0.0.0.0", port=5000, debug=True)
+
+if __name__ == "__main__":
+  app.run(host="0.0.0.0", port=5000, debug=True)
