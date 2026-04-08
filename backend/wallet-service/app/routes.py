@@ -4,6 +4,9 @@ from app.service import get_wallet_balance, get_wallet_ledger
 
 wallet_bp = Blueprint("wallet", __name__)
 
+@wallet_bp.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok"}), 200
 
 @wallet_bp.get("/wallets/<int:user_id>")
 def get_wallet(user_id: int):
