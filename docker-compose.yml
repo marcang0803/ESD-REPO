@@ -64,7 +64,7 @@ services:
     networks:
       - esd-net
     ports:
-      - "6005:5000"
+      - "5000:5000"
     environment:
       DATABASE_URL: mysql+mysqlconnector://root:root@booking-db:3306/booking
     depends_on:
@@ -127,7 +127,7 @@ services:
       class-db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5001"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -234,7 +234,7 @@ services:
       wallet-db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5001"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
       interval: 10s
       timeout: 5s
       retries: 5
