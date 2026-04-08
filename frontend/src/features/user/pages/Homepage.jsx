@@ -1,7 +1,8 @@
+
 import Icon from '../components/Icon.jsx'
 import { imgElenaVance, imgHPPowerYoga } from '../assets.js'
 
-export default function Homepage({ setScreen }) {
+export default function Homepage({ setScreen, user }) {
   return (
     <div style={{ background: '#f9f9f9', minHeight: '100%', paddingBottom: 108, position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: -26, left: -29, width: 480, height: 480, borderRadius: 9999, background: 'rgba(226,149,120,0.15)', filter: 'blur(40px)', pointerEvents: 'none' }} />
@@ -9,7 +10,7 @@ export default function Homepage({ setScreen }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '36px 24px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 36, height: 36, borderRadius: 9999, overflow: 'hidden', border: '2px solid rgba(226,149,120,0.3)', background: '#e8e8e8' }}>
-            <img src={imgElenaVance} alt="" style={{ width: '164%', height: '209%', objectFit: 'cover', marginLeft: '-22%', marginTop: '-2%' }} />
+            <img src={user?.img || imgElenaVance} alt="" style={{ width: '164%', height: '209%', objectFit: 'cover', marginLeft: '-22%', marginTop: '-2%' }} />
           </div>
           <span style={{ fontFamily: 'serif', fontSize: 16, letterSpacing: 4, color: '#1a1c1c' }}>Radiant Sanctuary</span>
         </div>
@@ -20,7 +21,7 @@ export default function Homepage({ setScreen }) {
         <div style={{ paddingTop: 36 }}>
           <div style={{ fontFamily: 'Georgia, serif', fontSize: 34, color: '#1a1c1c', letterSpacing: 0.9, lineHeight: 1.3 }}>
             <div>Good Morning,</div>
-            <div style={{ color: '#8c4e35' }}>Elena.</div>
+            <div style={{ color: '#8c4e35' }}>{user?.name || 'Elena'}.</div>
           </div>
           <p style={{ fontSize: 16, color: '#5b5d74', fontWeight: 300, lineHeight: 1.6, marginTop: 12, marginBottom: 0 }}>
             Your morning radiance is reaching a peak. Take a moment to settle into the present.

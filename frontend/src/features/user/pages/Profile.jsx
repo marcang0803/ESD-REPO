@@ -1,20 +1,12 @@
-import { useState, useEffect } from 'react'
-import { fetchUser } from '../api.js'
+import { useState } from 'react'
 import StarRating from '../components/StarRating.jsx'
 import UserSwitchAccountSheet from '../components/UserSwitchAccountSheet.jsx'
 import { imgBreathwork, imgDeepHealing, imgElenaVance, imgMorningYoga, imgVinyasa } from '../assets.js'
 import Icon from '../components/Icon.jsx'
 
 
-export default function Profile({ onSwitchToAdmin }) {
+export default function Profile({ onSwitchToAdmin, user }) {
   const [showSwitchSheet, setShowSwitchSheet] = useState(false)
-  const [user, setUser] = useState({ name: 'Loading...', img: null })
-  // For loading user 1001 into the demo, change to another user if you want to
-  useEffect(() => {
-    fetchUser(1001)
-      .then((data) => setUser({ name: data.name || 'Unknown', img: data.img || null }))
-      .catch(() => setUser({ name: 'Unknown', img: null }))
-  }, [])
 
   return (
     <div style={{ background: '#f9f9f9', minHeight: '100%', paddingBottom: 112, position: 'relative', overflow: 'hidden', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
@@ -32,11 +24,11 @@ export default function Profile({ onSwitchToAdmin }) {
             <div style={{ position: 'absolute', inset: -32, background: 'rgba(226,149,120,0.2)', borderRadius: 9999, filter: 'blur(32px)' }} />
             <div style={{ width: 128, height: 128, borderRadius: 9999, background: 'linear-gradient(45deg, #8c4e35 0%, #e29578 100%)', padding: 4, boxShadow: '0 0 40px 10px rgba(226,149,120,0.2)', position: 'relative' }}>
               <div style={{ borderRadius: 9999, border: '4px solid #f9f9f9', overflow: 'hidden', width: '100%', height: '100%', boxSizing: 'border-box' }}>
-                <img src={user.img || imgElenaVance} alt={user.name} style={{ width: '158%', height: '202%', objectFit: 'cover', marginLeft: '-18%', marginTop: '-3%' }} />
+                <img src={user?.img || imgElenaVance} alt={user?.name || 'User'} style={{ width: '158%', height: '202%', objectFit: 'cover', marginLeft: '-18%', marginTop: '-3%' }} />
               </div>
             </div>
           </div>
-          <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 36, fontWeight: 'bold', color: '#1a1c1c', margin: '8px 0 0', letterSpacing: -0.9 }}>{user.name}</h1>
+          <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 36, fontWeight: 'bold', color: '#1a1c1c', margin: '8px 0 0', letterSpacing: -0.9 }}>{user?.name || 'User'}</h1>
         </div>
 
         <div style={{ marginTop: 28 }}>
