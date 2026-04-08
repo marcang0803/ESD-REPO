@@ -1,0 +1,9 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 27 25.7625" fill="none" xmlns="http://www.w3.org/2000/svg">
+<foreignObject x="-12" y="-12" width="51" height="49.7625"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(6px);clip-path:url(#bgblur_0_159_146_clip_path);height:100%;width:100%"></div></foreignObject><g id="Overlay+OverlayBlur" data-figma-bg-blur-radius="12">
+<rect width="27" height="25.7625" rx="12.8813" fill="var(--fill-0, white)" fill-opacity="0.8"/>
+<path id="Icon" d="M13.5 19.7625L12.4125 18.7875C11.15 17.65 10.1062 16.6687 9.28125 15.8438C8.45625 15.0188 7.8 14.2781 7.3125 13.6219C6.825 12.9656 6.48438 12.3625 6.29063 11.8125C6.09688 11.2625 6 10.7 6 10.125C6 8.95 6.39375 7.96875 7.18125 7.18125C7.96875 6.39375 8.95 6 10.125 6C10.775 6 11.3937 6.1375 11.9812 6.4125C12.5687 6.6875 13.075 7.075 13.5 7.575C13.925 7.075 14.4313 6.6875 15.0188 6.4125C15.6063 6.1375 16.225 6 16.875 6C18.05 6 19.0313 6.39375 19.8188 7.18125C20.6063 7.96875 21 8.95 21 10.125C21 10.7 20.9031 11.2625 20.7094 11.8125C20.5156 12.3625 20.175 12.9656 19.6875 13.6219C19.2 14.2781 18.5437 15.0188 17.7188 15.8438C16.8938 16.6687 15.85 17.65 14.5875 18.7875L13.5 19.7625V19.7625" fill="var(--fill-0, #8C4E35)"/>
+</g>
+<defs>
+<clipPath id="bgblur_0_159_146_clip_path" transform="translate(12 12)"><rect width="27" height="25.7625" rx="12.8813"/>
+</clipPath></defs>
+</svg>
