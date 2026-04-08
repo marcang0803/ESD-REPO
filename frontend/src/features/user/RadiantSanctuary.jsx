@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { fetchUser } from './api.js'
 import BottomNav from './components/BottomNav.jsx'
 import BookingCancellation from './pages/BookingCancellation.jsx'
 import BookingConfirmed from './pages/BookingConfirmed.jsx'
@@ -17,6 +18,19 @@ const tabScreens = new Set(['homepage', 'explore', 'bookings', 'wallet', 'profil
 export default function RadiantSanctuary({ onSwitchToAdmin }) {
   const [history, setHistory] = useState(['homepage'])
   const screen = history[history.length - 1]
+  const [user, setUser] = useState({ name: 'Loading...', img: null })
+
+  useEffect(() => {
+    fetchUser(1001)
+      .then((data) => {
+        console.log('Fetched user data:', data);
+        setUser({ name: data.name || 'Unknown', img: data.img || null });
+      })
+      .catch((err) => {
+        console.error('Failed to fetch user:', err);
+        setUser({ name: 'Unknown', img: null });
+      });
+  }, [])
 
   const setScreen = (nextScreen) => {
     setHistory((current) => {
@@ -36,20 +50,20 @@ export default function RadiantSanctuary({ onSwitchToAdmin }) {
     setHistory((current) => (current.length > 1 ? current.slice(0, -1) : [fallback]))
   }
 
-  const sharedProps = { setScreen, goBack }
+  const sharedProps = { setScreen, goBack, user }
 
   const screens = {
-    homepage: <Homepage {...sharedProps} />,
-    explore: <Explore {...sharedProps} />,
-    bookings: <Bookings {...sharedProps} />,
-    wallet: <Wallet {...sharedProps} />,
-    profile: <Profile {...sharedProps} onSwitchToAdmin={onSwitchToAdmin} />,
-    filter: <Filter {...sharedProps} />,
-    confirmBooking: <ConfirmBooking {...sharedProps} />,
-    cancelBooking: <CancelBooking {...sharedProps} />,
-    bookingCancellation: <BookingCancellation {...sharedProps} />,
-    classDetails: <ClassDetails {...sharedProps} />,
-    bookingConfirmed: <BookingConfirmed {...sharedProps} />,
+    homepage: <Homepage {...sharedProps} />, 
+    explore: <Explore {...sharedProps} />, 
+    bookings: <Bookings {...sharedProps} />, 
+    wallet: <Wallet {...sharedProps} />, 
+    profile: <Profile {...sharedProps} onSwitchToAdmin={onSwitchToAdmin} />, 
+    filter: <Filter {...sharedProps} />, 
+    confirmBooking: <ConfirmBooking {...sharedProps} />, 
+    cancelBooking: <CancelBooking {...sharedProps} />, 
+    bookingCancellation: <BookingCancellation {...sharedProps} />, 
+    classDetails: <ClassDetails {...sharedProps} />, 
+    bookingConfirmed: <BookingConfirmed {...sharedProps} />, 
   }
 
   return (
