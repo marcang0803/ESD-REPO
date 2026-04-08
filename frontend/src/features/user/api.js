@@ -1,7 +1,7 @@
 // API interface for user-related backend calls
 export async function fetchUser(userId) {
-  // Adjust the URL to match your backend API gateway/Kong route
-  const res = await fetch(`/user/${userId}`);
+  // Adjusted to match the correct backend endpoint
+  const res = await fetch(`/users/${userId}`);
   if (!res.ok) throw new Error('Failed to fetch user');
   return res.json();
 }

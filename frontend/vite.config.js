@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => {
     server: {
       host: true,
       proxy: {
-        '/api': {
+        '/users': {
           target: backendTarget,
           changeOrigin: true,
           secure: false
