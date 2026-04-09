@@ -98,6 +98,45 @@ export async function bookClass({ userId, classId, credits }) {
   return payload
 }
 
+export async function fetchClasses(providerId = 1) {
+  const response = await fetch(`/classes?providerId=${providerId}`)
+  const payload = await readJson(response)
+
+  if (!response.ok) {
+    throw new Error(getErrorMessage(payload, 'Failed to fetch classes'))
+  }
+
+  return Array.isArray(payload?.classes) ? payload.classes : []
+}
+
+export async function fetchProviderDetails(providerId) {
+  const response = await fetch(`/providers/${providerId}/payout-details`)
+  const payload = await readJson(response)
+
+  if (!response.ok) {
+    throw new Error(getErrorMessage(payload, 'Failed to fetch provider details'))
+  }
+
+  return payload
+}
+
+export async function completeClass(classId) {
+  const response = await fetch(`/classes/${classId}/complete`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+  const payload = await readJson(response)
+
+  if (!response.ok || payload?.success === false) {
+    throw new Error(getErrorMessage(payload, 'Failed to complete class'))
+  }
+
+  return payload
+}
+
 export async function cancelBooking({ bookingId, userId, credits }) {
   const response = await fetch('/cancel', {
     method: 'POST',
