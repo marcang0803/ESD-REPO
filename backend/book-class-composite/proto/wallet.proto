@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package wallet;
+
+message BalanceRequest {
+  int64 user_id = 1;
+}
+
+message BalanceResponse {
+  bool success = 1;
+  string status = 2;
+  string message = 3;
+  int64 user_id = 4;
+  int32 balance = 5;
+}
+
+message WalletMutationRequest {
+  int64 user_id = 1;
+  int32 amount = 2;
+  string transaction_id = 3;
+}
+
+message WalletMutationResponse {
+  bool success = 1;
+  string status = 2;
+  string message = 3;
+  int64 user_id = 4;
+  int32 balance = 5;
+  string transaction_id = 6;
+  string entry_type = 7;
+  int32 amount = 8;
+}
+
+service WalletService {
+  rpc GetBalance(BalanceRequest) returns (BalanceResponse);
+  rpc DebitCredits(WalletMutationRequest) returns (WalletMutationResponse);
+  rpc RefundCredits(WalletMutationRequest) returns (WalletMutationResponse);
+  rpc ForfeitCredits(WalletMutationRequest) returns (WalletMutationResponse);
+}
