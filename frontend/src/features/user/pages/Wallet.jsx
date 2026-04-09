@@ -56,8 +56,8 @@ export default function Wallet({ walletBalance, creditsSpent, lastCancellation }
               <p style={{ fontSize: 13, fontWeight: 'bold', color: '#e29578', letterSpacing: 1.4, margin: '4px 0 0' }}>CREDITS</p>
               <p style={{ fontSize: 11, color: '#5b5d74', margin: '8px 0 0', textAlign: 'center', maxWidth: 180, lineHeight: 1.5 }}>
                 {Number.isFinite(walletBalance)
-                  ? 'Current available credits for Elena Lim.'
-                  : 'Balance will update here when the cancel-booking composite returns a wallet balance.'}
+                  ? 'Current available credits synced from the wallet service.'
+                  : 'Current balance is loading from the backend wallet service.'}
               </p>
             </div>
           </div>

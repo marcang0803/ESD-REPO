@@ -2,13 +2,30 @@ function formatCredits(value) {
   return Number.isFinite(value) ? value.toLocaleString() : '--'
 }
 
-export default function ConfirmBooking({ goBack, walletBalance, selectedPractice, handleConfirmBooking, isSelectedPracticeBooked }) {
+function LoadingSpinner() {
+  return (
+    <>
+      <style>{'@keyframes radiantSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }'}</style>
+      <span style={{ width: 16, height: 16, borderRadius: 9999, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: 'white', animation: 'radiantSpin 0.8s linear infinite' }} />
+    </>
+  )
+}
+
+export default function ConfirmBooking({
+  goBack,
+  walletBalance,
+  selectedPractice,
+  handleConfirmBooking,
+  isSelectedPracticeBooked,
+  isBooking,
+  bookingError,
+}) {
   const practice = selectedPractice
   const bookingCost = practice.credits
   const startingBalance = Number.isFinite(walletBalance) ? walletBalance : null
-  const remainingBalance = Number.isFinite(startingBalance)
-    ? (isSelectedPracticeBooked ? startingBalance : startingBalance - bookingCost)
-    : null
+  const backendBalanceLabel = isSelectedPracticeBooked
+    ? formatCredits(startingBalance)
+    : 'Updated by backend'
 
   return (
     <div style={{ minHeight: '100%', background: '#1a1c1c', position: 'relative', overflowY: 'auto', overflowX: 'hidden' }}>
@@ -83,9 +100,14 @@ export default function ConfirmBooking({ goBack, walletBalance, selectedPractice
             <span style={{ fontSize: 14, fontWeight: 600, color: '#8c4e35' }}>- {bookingCost} credits</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 13, color: '#7a5a52' }}>Remaining Balance</span>
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#8c4e35', fontFamily: "'Noto Serif', Georgia, serif" }}>{formatCredits(remainingBalance)}</span>
+            <span style={{ fontSize: 13, color: '#7a5a52' }}>Wallet After Booking</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: '#8c4e35', fontFamily: "'Noto Serif', Georgia, serif" }}>{backendBalanceLabel}</span>
           </div>
+          <p style={{ margin: '12px 0 0', fontSize: 12, color: '#7a5a52', lineHeight: 1.5 }}>
+            {Number.isFinite(startingBalance)
+              ? 'This balance is loaded from the wallet service. The final wallet amount refreshes after the booking composite confirms your reservation.'
+              : 'Current wallet balance is still loading from the backend.'}
+          </p>
         </div>
         {isSelectedPracticeBooked ? (
           <div style={{ background: 'rgba(140,78,53,0.08)', border: '1px solid rgba(140,78,53,0.14)', borderRadius: 20, padding: '14px 16px', marginBottom: 18 }}>
@@ -94,25 +116,36 @@ export default function ConfirmBooking({ goBack, walletBalance, selectedPractice
             </p>
           </div>
         ) : null}
+        {bookingError ? (
+          <div style={{ background: 'rgba(186, 26, 26, 0.08)', border: '1px solid rgba(186, 26, 26, 0.18)', borderRadius: 20, padding: '14px 16px', marginBottom: 18 }}>
+            <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 700, letterSpacing: 1.1, textTransform: 'uppercase', color: '#ba1a1a' }}>Booking failed</p>
+            <p style={{ margin: 0, fontSize: 14, color: '#7a2f2f', lineHeight: 1.5 }}>{bookingError}</p>
+          </div>
+        ) : null}
         <button
           onClick={handleConfirmBooking}
-          disabled={isSelectedPracticeBooked}
+          disabled={isSelectedPracticeBooked || isBooking}
           style={{
             width: '100%',
-            background: isSelectedPracticeBooked ? 'rgba(140,78,53,0.16)' : 'linear-gradient(11deg, #8c4e35 0%, #e29578 100%)',
+            background: (isSelectedPracticeBooked || isBooking) ? 'rgba(140,78,53,0.16)' : 'linear-gradient(11deg, #8c4e35 0%, #e29578 100%)',
             border: 'none',
             borderRadius: 9999,
             padding: '18px 0',
             fontSize: 15,
             fontWeight: 700,
-            color: isSelectedPracticeBooked ? '#8c4e35' : 'white',
-            cursor: isSelectedPracticeBooked ? 'not-allowed' : 'pointer',
+            color: (isSelectedPracticeBooked || isBooking) ? '#8c4e35' : 'white',
+            cursor: (isSelectedPracticeBooked || isBooking) ? 'not-allowed' : 'pointer',
             letterSpacing: 0.5,
-            boxShadow: isSelectedPracticeBooked ? 'none' : '0 10px 24px rgba(140,78,53,0.3)',
+            boxShadow: (isSelectedPracticeBooked || isBooking) ? 'none' : '0 10px 24px rgba(140,78,53,0.3)',
             marginBottom: 14,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
           }}
         >
-          {isSelectedPracticeBooked ? 'Booked' : 'Confirm Booking'}
+          {isBooking ? <LoadingSpinner /> : null}
+          <span>{isSelectedPracticeBooked ? 'Booked' : (isBooking ? 'Booking...' : 'Confirm Booking')}</span>
         </button>
         <button onClick={() => goBack?.()} style={{ width: '100%', background: 'none', border: 'none', fontSize: 14, fontWeight: 500, color: 'rgba(83,67,62,0.7)', cursor: 'pointer', letterSpacing: 0.3 }}>Cancel &amp; Go Back</button>
       </div>

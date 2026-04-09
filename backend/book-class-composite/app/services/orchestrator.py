@@ -7,7 +7,7 @@ import traceback
 
 
 class BookingOrchestrator:
-    def create_booking(self, user_id, class_id, idempotency_key):
+    def create_booking(self, user_id, class_id, idempotency_key, credits):
         hold_id = None
         wallet_response = None
 
@@ -24,7 +24,7 @@ class BookingOrchestrator:
             print("STEP 2: Debiting wallet...")
             wallet_response = debit_credits(
                 user_id=user_id,
-                amount=1,
+                amount=credits,
                 transaction_id=idempotency_key
             )
             print("Wallet response:", wallet_response)
@@ -57,7 +57,7 @@ class BookingOrchestrator:
                 # rollback wallet
                 refund_credits(
                     user_id=user_id,
-                    amount=1,
+                    amount=credits,
                     transaction_id=f"{idempotency_key}-refund"
                 )
 
@@ -124,7 +124,7 @@ class BookingOrchestrator:
                         print("Rolling back wallet...")
                         refund_credits(
                             user_id=user_id,
-                            amount=1,
+                            amount=credits,
                             transaction_id=f"{idempotency_key}-refund"
                         )
                 except Exception as err:

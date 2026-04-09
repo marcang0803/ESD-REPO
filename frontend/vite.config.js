@@ -28,6 +28,8 @@ export default defineConfig(({ mode }) => {
   const repoRoot = resolve(__dirname, '..')
   const env = loadEnv(mode, repoRoot, '')
   const userServiceTarget = env.VITE_USER_SERVICE_URL || 'http://127.0.0.1:5010'
+  const walletServiceTarget = env.VITE_WALLET_SERVICE_URL || 'http://127.0.0.1:5005'
+  const bookClassTarget = env.VITE_BOOK_CLASS_URL || 'http://127.0.0.1:5003'
   const cancelBookingTarget = env.VITE_CANCEL_BOOKING_URL || 'http://127.0.0.1:5004'
 
   return {
@@ -38,6 +40,16 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/users': {
           target: userServiceTarget,
+          changeOrigin: true,
+          secure: false
+        },
+        '/wallets': {
+          target: walletServiceTarget,
+          changeOrigin: true,
+          secure: false
+        },
+        '/bookings': {
+          target: bookClassTarget,
           changeOrigin: true,
           secure: false
         },

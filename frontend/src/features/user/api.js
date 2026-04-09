@@ -15,12 +15,12 @@ function getErrorMessage(payload, fallback) {
   return fallback
 }
 
-function createIdempotencyKey() {
+function createIdempotencyKey(prefix = 'request') {
   if (globalThis.crypto?.randomUUID) {
-    return `cancel-${globalThis.crypto.randomUUID()}`
+    return `${prefix}-${globalThis.crypto.randomUUID()}`
   }
 
-  return `cancel-${Date.now()}-${Math.random().toString(16).slice(2)}`
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
 export async function fetchUser(userId) {
@@ -34,12 +34,62 @@ export async function fetchUser(userId) {
   return payload
 }
 
+export async function fetchWalletBalance(userId) {
+  const response = await fetch(`/wallets/${userId}`)
+  const payload = await readJson(response)
+
+  if (!response.ok) {
+    throw new Error(getErrorMessage(payload, 'Failed to fetch wallet balance'))
+  }
+
+  return payload
+}
+
+export async function fetchWalletLedger(userId, { limit = 50, offset = 0 } = {}) {
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  })
+
+  const response = await fetch(`/wallets/${userId}/ledger?${params.toString()}`)
+  const payload = await readJson(response)
+
+  if (!response.ok) {
+    throw new Error(getErrorMessage(payload, 'Failed to fetch wallet ledger'))
+  }
+
+  return payload
+}
+
+export async function bookClass({ userId, classId, credits }) {
+  const response = await fetch('/bookings', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      user_id: userId,
+      class_id: classId,
+      credits,
+      idempotency_key: createIdempotencyKey('book'),
+    }),
+  })
+
+  const payload = await readJson(response)
+
+  if (!response.ok || payload?.success === false) {
+    throw new Error(getErrorMessage(payload, 'Failed to book class'))
+  }
+
+  return payload
+}
+
 export async function cancelBooking({ bookingId, userId }) {
   const response = await fetch('/cancel', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Idempotency-Key': createIdempotencyKey(),
+      'Idempotency-Key': createIdempotencyKey('cancel'),
     },
     body: JSON.stringify({
       bookingId,
