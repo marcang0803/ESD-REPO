@@ -1,6 +1,0 @@
-Flask
-SQLAlchemy
-PyMySQL
-grpcio
-grpcio-tools
-protobuf
