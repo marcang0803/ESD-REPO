@@ -51,7 +51,7 @@ export default function Homepage({ setScreen, user, nextBooking, startCancellati
                     </div>
                     <div style={{ display: 'flex', gap: 12 }}>
                       <button onClick={() => openBooking(nextBooking)} style={{ flex: 1, background: '#e2e2e2', border: 'none', borderRadius: 9999, padding: '12px 0', fontSize: 14, fontWeight: 600, color: '#1a1c1c', cursor: 'pointer' }}>View Details</button>
-                      <button onClick={() => startCancellation(nextBooking)} style={{ background: 'transparent', border: 'none', padding: '12px 16px', fontSize: 14, fontWeight: 500, color: '#5b5d74', cursor: 'pointer' }}>Cancel</button>
+                      <button onClick={() => startCancellation(nextBooking)} style={{ background: 'transparent', border: 'none', padding: '12px 16px', fontSize: 14, fontWeight: 500, color: '#5b5d74', cursor: 'pointer' }}>Withdraw</button>
                     </div>
                   </>
                 ) : (
