@@ -1,5 +1,9 @@
+import { useEffect, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import { imgCWProfile, imgCWLunarBreath, imgCWSolarGratitude } from '../assets.js'
+
+const PAYMENT_SERVICE_URL = 'http://localhost:5001'
+const USER_ID = 1001
 
 const milestones = [
   {
@@ -25,12 +29,260 @@ const milestones = [
   },
 ]
 
-export default function Wallet({ walletBalance, creditsSpent, lastCancellation }) {
+// ── Top Up Modal ──────────────────────────────────────────────────────────────
+function TopUpModal({ onClose, onSuccess }) {
+  const [packages, setPackages]   = useState([])
+  const [selected, setSelected]   = useState(null)
+  const [loading, setLoading]     = useState(false)
+  const [error, setError]         = useState(null)
+
+  useEffect(() => {
+    fetch(`${PAYMENT_SERVICE_URL}/topup/packages`)
+      .then(r => r.json())
+      .then(data => {
+        setPackages(data.packages || [])
+        if (data.packages?.length) setSelected(data.packages[1].id) // default: 300 credits
+      })
+      .catch(() => setError('Could not load packages. Is the payment service running?'))
+  }, [])
+
+  async function handleCheckout() {
+    if (!selected) return
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`${PAYMENT_SERVICE_URL}/topup/checkout`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ user_id: USER_ID, package_id: selected }),
+      })
+      const data = await res.json()
+      if (data.checkout_url) {
+        // Redirect to Stripe Checkout in the same tab
+        window.location.href = data.checkout_url
+      } else {
+        setError(data.error || 'Failed to create checkout session.')
+      }
+    } catch (err) {
+      setError(`Network error: ${err.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const selectedPkg = packages.find(p => p.id === selected)
+
+  return (
+    <div
+      style={{
+        position:        'fixed',
+        inset:           0,
+        zIndex:          1000,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        display:         'flex',
+        alignItems:      'flex-end',
+        justifyContent:  'center',
+      }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        style={{
+          backgroundColor: '#fef8f4',
+          borderRadius:    '32px 32px 0 0',
+          padding:         '28px 24px 40px',
+          width:           '100%',
+          maxWidth:        390,
+          display:         'flex',
+          flexDirection:   'column',
+          gap:             20,
+        }}
+      >
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 22, color: '#1a1c1c', margin: 0 }}>
+            Top Up Credits
+          </h2>
+          <button
+            onClick={onClose}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18M6 6l12 12" stroke="#8c4e35" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <p style={{ fontFamily: 'sans-serif', fontSize: 14, color: '#5b5d74', margin: 0, lineHeight: 1.6 }}>
+          Select a credit package to top up your wallet via Stripe.
+        </p>
+
+        {/* Error */}
+        {error && (
+          <div style={{ backgroundColor: '#fdecea', borderRadius: 16, padding: 14 }}>
+            <p style={{ margin: 0, fontSize: 13, color: '#ba1a1a', fontFamily: 'sans-serif' }}>{error}</p>
+          </div>
+        )}
+
+        {/* Packages */}
+        {packages.length === 0 && !error ? (
+          <p style={{ fontFamily: 'sans-serif', fontSize: 14, color: '#5b5d74', textAlign: 'center' }}>
+            Loading packages…
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {packages.map(pkg => (
+              <button
+                key={pkg.id}
+                onClick={() => setSelected(pkg.id)}
+                style={{
+                  display:         'flex',
+                  justifyContent:  'space-between',
+                  alignItems:      'center',
+                  padding:         '16px 20px',
+                  borderRadius:    20,
+                  border:          selected === pkg.id
+                                     ? '2px solid #8c4e35'
+                                     : '2px solid transparent',
+                  backgroundColor: selected === pkg.id ? '#fff3ee' : 'white',
+                  cursor:          'pointer',
+                  boxShadow:       '0 1px 4px rgba(0,0,0,0.06)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div
+                    style={{
+                      width:           44,
+                      height:          44,
+                      borderRadius:    12,
+                      background:      selected === pkg.id
+                                         ? 'linear-gradient(135deg, #8c4e35, #e29578)'
+                                         : '#f3ede9',
+                      display:         'flex',
+                      alignItems:      'center',
+                      justifyContent:  'center',
+                    }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill={selected === pkg.id ? 'white' : '#8c4e35'}>
+                      <path d="M12 2l3 7h7l-6 4 2 7-6-4-6 4 2-7-6-4h7z" />
+                    </svg>
+                  </div>
+                  <div style={{ textAlign: 'left' }}>
+                    <p style={{ margin: 0, fontFamily: 'Georgia, serif', fontSize: 17, color: '#1a1c1c', fontWeight: 600 }}>
+                      {pkg.credits.toLocaleString()} Credits
+                    </p>
+                    <p style={{ margin: 0, fontFamily: 'sans-serif', fontSize: 12, color: '#5b5d74' }}>
+                      SGD ${pkg.price_sgd.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+                {selected === pkg.id && (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" fill="#8c4e35"/>
+                    <path d="M7 12l4 4 6-7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Summary + CTA */}
+        {selectedPkg && (
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius:    20,
+              padding:         '16px 20px',
+              display:         'flex',
+              justifyContent:  'space-between',
+              alignItems:      'center',
+            }}
+          >
+            <div>
+              <p style={{ margin: 0, fontFamily: 'sans-serif', fontSize: 12, color: '#5b5d74', textTransform: 'uppercase', letterSpacing: 1 }}>
+                You pay
+              </p>
+              <p style={{ margin: '4px 0 0', fontFamily: 'Georgia, serif', fontSize: 22, color: '#8c4e35', fontWeight: 700 }}>
+                SGD ${selectedPkg.price_sgd.toFixed(2)}
+              </p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ margin: 0, fontFamily: 'sans-serif', fontSize: 12, color: '#5b5d74', textTransform: 'uppercase', letterSpacing: 1 }}>
+                You receive
+              </p>
+              <p style={{ margin: '4px 0 0', fontFamily: 'Georgia, serif', fontSize: 22, color: '#1a1c1c', fontWeight: 700 }}>
+                {selectedPkg.credits.toLocaleString()} cr
+              </p>
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={handleCheckout}
+          disabled={loading || !selected || packages.length === 0}
+          style={{
+            background:    loading ? '#d8c2ba' : 'linear-gradient(11deg, #8c4e35 0%, #e29578 100%)',
+            border:        'none',
+            borderRadius:  9999,
+            padding:       '18px 40px',
+            display:       'flex',
+            alignItems:    'center',
+            justifyContent:'center',
+            gap:           10,
+            cursor:        loading ? 'not-allowed' : 'pointer',
+            boxShadow:     '0 10px 15px -3px rgba(140,78,53,0.2)',
+          }}
+        >
+          {/* Stripe logo */}
+          {!loading && (
+            <svg width="16" height="16" viewBox="0 0 32 32" fill="white">
+              <path d="M14.5 9.8c0-1 .8-1.4 2.1-1.4 1.9 0 4.2.6 6.1 1.6V4.5C20.7 3.5 18.6 3 16.5 3 11.4 3 8 5.6 8 10.1c0 7 9.6 5.9 9.6 8.9 0 1.2-1 1.6-2.4 1.6-2.1 0-4.8-.9-6.9-2.1v5.6c2.3 1 4.7 1.5 6.9 1.5 5.2 0 8.8-2.6 8.8-7.1-.1-7.5-9.5-6.2-9.5-8.7z"/>
+            </svg>
+          )}
+          <span style={{ color: 'white', fontSize: 15, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+            {loading ? 'Redirecting…' : 'Pay with Stripe'}
+          </span>
+        </button>
+
+        <p style={{ fontFamily: 'sans-serif', fontSize: 11, color: '#a8a29e', textAlign: 'center', margin: 0 }}>
+          Secured by Stripe · Test mode · Use card 4242 4242 4242 4242
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ── Wallet Page ───────────────────────────────────────────────────────────────
+export default function Wallet({ walletBalance, setWalletBalance, lastCancellation }) {
+  const [showTopUp, setShowTopUp] = useState(false)
+  const [topUpBanner, setTopUpBanner] = useState(null)
+
+  // Check if returning from Stripe Checkout (success or cancelled)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const status  = params.get('topup')
+    const credits = params.get('credits')
+
+    if (status === 'success' && credits) {
+      setTopUpBanner({ type: 'success', credits: parseInt(credits, 10) })
+      // Refresh wallet balance from backend
+      fetch(`http://localhost:5005/wallets/${USER_ID}`)
+        .then(r => r.json())
+        .then(data => {
+          if (typeof setWalletBalance === 'function') {
+            setWalletBalance(data.balance)
+          }
+        })
+        .catch(() => {})
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname + window.location.hash)
+    } else if (status === 'cancelled') {
+      setTopUpBanner({ type: 'cancelled' })
+      window.history.replaceState({}, '', window.location.pathname + window.location.hash)
+    }
+  }, [])
+
   const balanceLabel = Number.isFinite(walletBalance) ? walletBalance.toLocaleString() : '--'
-  const creditsSpentLabel = Number.isFinite(creditsSpent) ? creditsSpent.toLocaleString() : '--'
-  const creditsSpentProgress = `${Number.isFinite(creditsSpent)
-    ? Math.min(Math.max((creditsSpent / 1000) * 100, 0), 100)
-    : 0}%`
 
   return (
     <div style={{ background: '#f9f9f9', minHeight: '100%', paddingBottom: 108, position: 'relative', overflow: 'hidden' }}>
@@ -47,6 +299,36 @@ export default function Wallet({ walletBalance, creditsSpent, lastCancellation }
       </div>
 
       <div style={{ padding: '0 24px' }}>
+
+        {/* Top-up result banner */}
+        {topUpBanner && (
+          <div
+            style={{
+              marginTop:       20,
+              backgroundColor: topUpBanner.type === 'success' ? '#e6f4f1' : '#fdecea',
+              borderRadius:    20,
+              padding:         '14px 18px',
+              display:         'flex',
+              justifyContent:  'space-between',
+              alignItems:      'center',
+            }}
+          >
+            <p style={{ margin: 0, fontFamily: 'sans-serif', fontSize: 14, color: topUpBanner.type === 'success' ? '#00504b' : '#ba1a1a', fontWeight: 600 }}>
+              {topUpBanner.type === 'success'
+                ? `✓ ${topUpBanner.credits.toLocaleString()} credits added to your wallet!`
+                : '✗ Top-up cancelled.'}
+            </p>
+            <button
+              onClick={() => setTopUpBanner(null)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
+        )}
+
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 36 }}>
           <div style={{ width: 280, height: 280, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ position: 'absolute', inset: 0, borderRadius: 9999, background: 'radial-gradient(circle, rgba(255,219,206,1) 0%, rgba(241,184,163,1) 20%, rgba(226,149,120,1) 40%, rgba(226,149,120,0) 70%)', filter: 'blur(20px)' }} />
@@ -55,14 +337,27 @@ export default function Wallet({ walletBalance, creditsSpent, lastCancellation }
               <p style={{ fontSize: 56, fontWeight: 'bold', color: '#8c4e35', margin: 0, fontFamily: 'Georgia, serif', letterSpacing: -1.5 }}>{balanceLabel}</p>
               <p style={{ fontSize: 13, fontWeight: 'bold', color: '#e29578', letterSpacing: 1.4, margin: '4px 0 0' }}>CREDITS</p>
               <p style={{ fontSize: 11, color: '#5b5d74', margin: '8px 0 0', textAlign: 'center', maxWidth: 180, lineHeight: 1.5 }}>
-                {Number.isFinite(walletBalance)
-                  ? 'Current available credits synced from the wallet service.'
-                  : 'Current balance is loading from the backend wallet service.'}
+                Current available credits for Elena Lim.
               </p>
             </div>
           </div>
 
-          <button style={{ marginTop: 16, background: 'linear-gradient(11deg, #8c4e35 0%, #e29578 100%)', border: 'none', borderRadius: 9999, padding: '16px 40px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(140,78,53,0.2)' }}>
+          {/* Top Up Button */}
+          <button
+            onClick={() => setShowTopUp(true)}
+            style={{
+              marginTop:   16,
+              background:  'linear-gradient(11deg, #8c4e35 0%, #e29578 100%)',
+              border:      'none',
+              borderRadius: 9999,
+              padding:     '16px 40px',
+              display:     'flex',
+              alignItems:  'center',
+              gap:         10,
+              cursor:      'pointer',
+              boxShadow:   '0 10px 15px -3px rgba(140,78,53,0.2)',
+            }}
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M12 2l3 7h7l-6 4 2 7-6-4-6 4 2-7-6-4h7z" /></svg>
             <span style={{ color: 'white', fontSize: 13, fontWeight: 600, letterSpacing: 2.1, textTransform: 'uppercase' }}>Top Up Balance</span>
           </button>
@@ -75,7 +370,7 @@ export default function Wallet({ walletBalance, creditsSpent, lastCancellation }
                 <div>
                   <p style={{ fontSize: 10, color: '#5b5d74', textTransform: 'uppercase', letterSpacing: 1 }}>Latest wallet update</p>
                   <p style={{ fontSize: 22, color: '#1a1c1c', fontFamily: 'Georgia, serif', margin: '10px 0 6px' }}>
-                    {lastCancellation.result.refund_policy === 'refund' ? 'Credits Refunded' : 'Credits Forfeited'}
+                    {lastCancellation.result.refund_policy === 'refund' ? 'Credits Refunded' : 'No Refund Applied'}
                   </p>
                   <p style={{ margin: 0, fontSize: 14, color: '#5b5d74', lineHeight: 1.6 }}>
                     {lastCancellation.result.wallet?.message || lastCancellation.result.message}
@@ -97,11 +392,13 @@ export default function Wallet({ walletBalance, creditsSpent, lastCancellation }
             </div>
             <p style={{ fontSize: 22, color: '#1a1c1c', fontFamily: 'Georgia, serif', margin: '16px 0 4px' }}>Credits Spent</p>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, paddingBottom: 16 }}>
-              <span style={{ fontSize: 30, fontWeight: 'bold', color: '#8c4e35', fontFamily: 'Georgia, serif' }}>{creditsSpentLabel}</span>
+              <span style={{ fontSize: 30, fontWeight: 'bold', color: '#8c4e35', fontFamily: 'Georgia, serif' }}>
+                {Number.isFinite(walletBalance) ? (1000 - walletBalance) : '--'}
+              </span>
               <span style={{ fontSize: 12, color: '#5b5d74' }}>Credits</span>
             </div>
             <div style={{ height: 4, background: '#eee', borderRadius: 9999 }}>
-              <div style={{ height: '100%', width: creditsSpentProgress, background: '#8c4e35', borderRadius: 9999 }} />
+              <div style={{ height: '100%', width: `${Math.min(100, Number.isFinite(walletBalance) ? ((1000 - walletBalance) / 10) : 0)}%`, background: '#8c4e35', borderRadius: 9999 }} />
             </div>
           </div>
 
@@ -148,7 +445,6 @@ export default function Wallet({ walletBalance, creditsSpent, lastCancellation }
                         <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
                       </svg>
                     )}
-                    {!milestone.customSvg && <Icon name={milestone.icon} size={20} color="#8c4e35" />}
                   </div>
                   <span style={{ fontSize: 9, fontWeight: 600, color: '#53433e', textTransform: 'uppercase', letterSpacing: -0.45 }}>{milestone.label}</span>
                 </div>
@@ -183,47 +479,18 @@ export default function Wallet({ walletBalance, creditsSpent, lastCancellation }
               </div>
             </div>
           ))}
-
-          <div style={{ background: 'white', borderRadius: 24, padding: 20, marginBottom: 12 }}>
-            <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: 8 }}>
-              <div style={{ width: 52, height: 60, borderRadius: 14, background: '#ffdbce', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
-                <Icon name="card" size={22} color="#8c4e35" />
-              </div>
-              <div>
-                <p style={{ fontSize: 17, fontFamily: 'Georgia, serif', color: '#1a1c1c', margin: '0 0 2px' }}>Credit Top Up</p>
-                <p style={{ fontSize: 10, color: '#a8a29e', textTransform: 'uppercase', letterSpacing: 0.5, margin: 0 }}>Visa **** 4242</p>
-              </div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 20, fontWeight: 'bold', color: '#334400', fontFamily: 'Georgia, serif' }}>+500</span>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <span style={{ background: '#f7e8e1', color: '#8c4e35', fontSize: 9, fontWeight: 'bold', padding: '2px 8px', borderRadius: 9999, textTransform: 'uppercase' }}>Credit</span>
-                <span style={{ fontSize: 10, color: '#5b5d74', textTransform: 'uppercase', letterSpacing: 1 }}>Oct 01, 12:00 AM</span>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ background: 'white', borderRadius: 24, padding: 20 }}>
-            <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: 8 }}>
-              <div style={{ width: 52, height: 60, borderRadius: 14, background: '#fdf4f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
-                <Icon name="undo" size={22} color="#8c4e35" />
-              </div>
-              <div>
-                <p style={{ fontSize: 17, fontFamily: 'Georgia, serif', color: '#1a1c1c', margin: '0 0 2px' }}>Package Refund</p>
-                <p style={{ fontSize: 10, color: '#a8a29e', textTransform: 'uppercase', letterSpacing: 0.5, margin: '0 0 2px' }}>Refund</p>
-                <p style={{ fontSize: 10, color: '#a8a29e', textTransform: 'uppercase', letterSpacing: 0.5, margin: 0 }}>Cancelled session</p>
-              </div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 20, fontWeight: 'bold', color: '#334400', fontFamily: 'Georgia, serif' }}>+40</span>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <span style={{ background: '#e8edeb', color: '#5e746b', fontSize: 9, fontWeight: 'bold', padding: '2px 8px', borderRadius: 9999, textTransform: 'uppercase' }}>Refund</span>
-                <span style={{ fontSize: 10, color: '#5b5d74', textTransform: 'uppercase', letterSpacing: 1 }}>Oct 01, 12:00 AM</span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
+
+      {/* Top Up Modal */}
+      {showTopUp && (
+        <TopUpModal
+          onClose={() => setShowTopUp(false)}
+          onSuccess={() => {
+            setShowTopUp(false)
+          }}
+        />
+      )}
     </div>
   )
 }

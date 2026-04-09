@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { bookClass, cancelBooking, fetchUser, fetchUserBookings, fetchWalletBalance, fetchWalletLedger } from './api.js'
+import { cancelBooking, fetchUser } from './api.js'
 import { createUpcomingBooking, explorePractices, initialPastBookings, initialUpcomingBookings } from './bookingData.js'
 import BottomNav from './components/BottomNav.jsx'
 import BookingCancellation from './pages/BookingCancellation.jsx'
@@ -16,7 +16,9 @@ import Wallet from './pages/Wallet.jsx'
 
 const tabScreens = new Set(['homepage', 'explore', 'bookings', 'wallet', 'profile'])
 const USER_ID = 1001
+const INITIAL_WALLET_BALANCE = 840
 const DEFAULT_PRACTICE = explorePractices[0]
+const INITIAL_LOCAL_BOOKING_ID = 10000
 const practiceOrder = new Map(explorePractices.map((practice, index) => [practice.classId, index]))
 
 function sortUpcomingBookings(bookings) {
@@ -46,18 +48,6 @@ function updatePracticeSpots(practices, classId, delta) {
   })
 }
 
-function calculateCreditsSpent(entries) {
-  const total = (Array.isArray(entries) ? entries : []).reduce((sum, entry) => {
-    const amount = Number(entry?.amount)
-    if (!Number.isFinite(amount)) return sum
-    if (entry?.type === 'DEBIT') return sum + amount
-    if (entry?.type === 'REFUND') return sum - amount
-    return sum
-  }, 0)
-
-  return Math.max(total, 0)
-}
-
 export default function RadiantSanctuary({ onSwitchToAdmin }) {
   const [history, setHistory] = useState(['homepage'])
   const screen = history[history.length - 1]
@@ -67,26 +57,13 @@ export default function RadiantSanctuary({ onSwitchToAdmin }) {
   const [pastBookings] = useState(initialPastBookings)
   const [selectedBookingId, setSelectedBookingId] = useState(initialUpcomingBookings[0]?.bookingId ?? null)
   const [selectedPracticeId, setSelectedPracticeId] = useState(DEFAULT_PRACTICE.classId)
-  const [lastConfirmedBooking, setLastConfirmedBooking] = useState(null)
+  const [lastBookedPracticeId, setLastBookedPracticeId] = useState(DEFAULT_PRACTICE.classId)
   const [bookedPracticeIds, setBookedPracticeIds] = useState(() => initialUpcomingBookings.map((booking) => booking.classId))
-  const [walletBalance, setWalletBalance] = useState(null)
-  const [creditsSpent, setCreditsSpent] = useState(null)
-  const [isBooking, setIsBooking] = useState(false)
-  const [bookingError, setBookingError] = useState('')
+  const [nextLocalBookingId, setNextLocalBookingId] = useState(INITIAL_LOCAL_BOOKING_ID)
+  const [walletBalance, setWalletBalance] = useState(INITIAL_WALLET_BALANCE)
   const [isCancelling, setIsCancelling] = useState(false)
   const [cancellationError, setCancellationError] = useState('')
   const [lastCancellation, setLastCancellation] = useState(null)
-
-  const refreshWalletState = async () => {
-    const [wallet, ledger] = await Promise.all([
-      fetchWalletBalance(USER_ID),
-      fetchWalletLedger(USER_ID),
-    ])
-
-    const nextBalance = Number(wallet?.balance)
-    setWalletBalance(Number.isFinite(nextBalance) ? nextBalance : null)
-    setCreditsSpent(calculateCreditsSpent(ledger?.entries))
-  }
 
   useEffect(() => {
     fetchUser(USER_ID)
@@ -101,29 +78,6 @@ export default function RadiantSanctuary({ onSwitchToAdmin }) {
       .catch((error) => {
         console.error('Failed to fetch user:', error)
       })
-
-    fetchUserBookings(USER_ID)
-      .then((records) => {
-        const fetched = records
-          .map((record) => {
-            const practice = explorePractices.find((p) => p.classId === record.class_id)
-            if (!practice) return null
-            return createUpcomingBooking(practice, record.booking_id)
-          })
-          .filter(Boolean)
-
-        if (fetched.length > 0) {
-          setUpcomingBookings(sortUpcomingBookings(fetched))
-          setBookedPracticeIds(fetched.map((b) => b.classId))
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to fetch existing bookings:', error)
-      })
-
-    refreshWalletState().catch((error) => {
-      console.error('Failed to fetch wallet state:', error)
-    })
   }, [])
 
   const setScreen = (nextScreen) => {
@@ -143,7 +97,7 @@ export default function RadiantSanctuary({ onSwitchToAdmin }) {
   const nextBooking = upcomingBookings[0] ?? null
   const selectedBooking = upcomingBookings.find((booking) => booking.bookingId === selectedBookingId) ?? nextBooking
   const selectedPractice = practices.find((practice) => practice.classId === selectedPracticeId) ?? practices[0] ?? DEFAULT_PRACTICE
-  const confirmationPractice = lastConfirmedBooking ?? selectedPractice ?? DEFAULT_PRACTICE
+  const confirmationPractice = practices.find((practice) => practice.classId === lastBookedPracticeId) ?? selectedPractice ?? DEFAULT_PRACTICE
 
   const isPracticeBooked = (practice) => {
     if (!practice?.classId) return false
@@ -153,10 +107,6 @@ export default function RadiantSanctuary({ onSwitchToAdmin }) {
   const openPractice = (practice, nextScreen) => {
     if (practice?.classId) {
       setSelectedPracticeId(practice.classId)
-    }
-
-    if (nextScreen === 'confirmBooking') {
-      setBookingError('')
     }
 
     setScreen(nextScreen)
@@ -200,20 +150,8 @@ export default function RadiantSanctuary({ onSwitchToAdmin }) {
       })
 
       const nextBalance = Number(result?.wallet?.balance)
-      const walletAmount = Number(result?.wallet?.amount)
-      const shouldRefreshWalletState = !Number.isFinite(nextBalance)
-        || (result?.refund_policy === 'refund' && !Number.isFinite(walletAmount))
-
       if (Number.isFinite(nextBalance)) {
         setWalletBalance(nextBalance)
-      }
-
-      if (shouldRefreshWalletState) {
-        await refreshWalletState()
-      } else if (result?.refund_policy === 'refund' && Number.isFinite(walletAmount)) {
-        setCreditsSpent((current) => (
-          Number.isFinite(current) ? Math.max(current - walletAmount, 0) : 0
-        ))
       }
 
       if (booking?.classId) {
@@ -235,44 +173,20 @@ export default function RadiantSanctuary({ onSwitchToAdmin }) {
     }
   }
 
-  const handleConfirmBooking = async () => {
+  const handleConfirmBooking = () => {
     const practice = selectedPractice ?? DEFAULT_PRACTICE
-    if (!practice || isPracticeBooked(practice) || isBooking) return
+    if (!practice) return
 
-    setIsBooking(true)
-    setBookingError('')
+    setLastBookedPracticeId(practice.classId)
 
-    try {
-      const result = await bookClass({
-        userId: USER_ID,
-        classId: practice.classId,
-        credits: practice.credits,
+    if (!isPracticeBooked(practice)) {
+      const bookingId = nextLocalBookingId
+      const booking = createUpcomingBooking(practice, bookingId)
+
+      setWalletBalance((current) => {
+        if (!Number.isFinite(current)) return current
+        return Math.max(current - practice.credits, 0)
       })
-
-      const bookingId = Number(result?.booking?.booking_id)
-      const walletAmount = Number(result?.wallet?.amount)
-      const nextBalance = Number(result?.wallet?.balance)
-      const shouldRefreshWalletState = !Number.isFinite(nextBalance) || !Number.isFinite(walletAmount)
-
-      if (!Number.isFinite(bookingId)) {
-        throw new Error('Booking completed but no booking ID was returned.')
-      }
-
-      const booking = createUpcomingBooking(practice, bookingId, {
-        credits: Number.isFinite(walletAmount) ? walletAmount : practice.credits,
-      })
-
-      if (Number.isFinite(nextBalance)) {
-        setWalletBalance(nextBalance)
-      }
-
-      if (shouldRefreshWalletState) {
-        await refreshWalletState()
-      } else {
-        setCreditsSpent((current) => (
-          Number.isFinite(current) ? current + walletAmount : walletAmount
-        ))
-      }
 
       setUpcomingBookings((current) => sortUpcomingBookings([...current, booking]))
       setBookedPracticeIds((current) => (
@@ -280,13 +194,10 @@ export default function RadiantSanctuary({ onSwitchToAdmin }) {
       ))
       setPractices((current) => updatePracticeSpots(current, practice.classId, -1))
       setSelectedBookingId(bookingId)
-      setLastConfirmedBooking(booking)
-      setScreen('bookingConfirmed')
-    } catch (error) {
-      setBookingError(error.message)
-    } finally {
-      setIsBooking(false)
+      setNextLocalBookingId((current) => current + 1)
     }
+
+    setScreen('bookingConfirmed')
   }
 
   const goBack = (fallback = 'homepage') => {
@@ -305,9 +216,7 @@ export default function RadiantSanctuary({ onSwitchToAdmin }) {
     pastBookings,
     practices,
     walletBalance,
-    creditsSpent,
-    isBooking,
-    bookingError,
+    setWalletBalance,
     isCancelling,
     cancellationError,
     lastCancellation,
