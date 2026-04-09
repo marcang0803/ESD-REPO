@@ -1,7 +1,3 @@
-// bookingData.js
-// This file contains only UI metadata (images, descriptions, instructor names)
-// that enriches class data fetched from the backend.
-// NO hardcoded class IDs, slots, prices, or bookings.
 
 import {
   imgBreathwork,
@@ -14,6 +10,38 @@ import {
 // Fallback image when no metadata match is found
 export const imgFallback = imgMorningYoga
 
+export const practiceImages = []
+
+export function createUpcomingBooking(practice, bookingId, overrides = {}) {
+  return {
+    bookingId,
+    classId:    practice.classId,
+    name:       practice.name,
+    date:       practice.date,
+    time:       practice.time,
+    location:   practice.location,
+    instructor: practice.instructor,
+    img:        practice.img,
+    ...overrides,
+  }
+}
+
+export const initialUpcomingBookings = []
+export const initialPastBookings = []
+
+export const explorePractices = [
+  {
+    classId:    1,
+    name:       'Core Pilates',
+    date:       '2026-04-15',
+    time:       '08:00:00',
+    location:   'Studio A',
+    spots:      '10 SPOTS LEFT',
+    credits:    20,
+    instructor: 'Sasha Gray',
+    img:        imgEXPilates,
+  },
+]
 // Round-robin assignment of UI metadata to backend classes.
 // Keys are backend class_ids — add entries as new classes are seeded.
 // Any unmapped class_id falls through to 'default'.

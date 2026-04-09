@@ -7,7 +7,7 @@ import {
   fetchUserBookings,
   fetchWalletBalance,
 } from './api.js'
-import { imgFallback, practiceImages, practiceMetadata } from './bookingData.js'
+import { imgFallback, practiceImages, practiceMetadata, createUpcomingBooking, explorePractices, initialPastBookings, initialUpcomingBookings } from './bookingData.js'
 import BottomNav           from './components/BottomNav.jsx'
 import BookingCancellation from './pages/BookingCancellation.jsx'
 import BookingConfirmed    from './pages/BookingConfirmed.jsx'
