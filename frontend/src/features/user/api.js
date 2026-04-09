@@ -98,7 +98,7 @@ export async function bookClass({ userId, classId, credits }) {
   return payload
 }
 
-export async function cancelBooking({ bookingId, userId }) {
+export async function cancelBooking({ bookingId, userId, credits }) {
   const response = await fetch('/cancel', {
     method: 'POST',
     headers: {
@@ -108,6 +108,7 @@ export async function cancelBooking({ bookingId, userId }) {
     body: JSON.stringify({
       bookingId,
       userId,
+      credits,
     }),
   })
 

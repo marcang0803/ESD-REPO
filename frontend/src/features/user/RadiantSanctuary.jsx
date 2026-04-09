@@ -197,6 +197,7 @@ export default function RadiantSanctuary({ onSwitchToAdmin }) {
       const result = await cancelBooking({
         bookingId,
         userId: USER_ID,
+        credits: booking?.credits ?? 0,
       })
 
       const nextBalance = Number(result?.wallet?.balance)

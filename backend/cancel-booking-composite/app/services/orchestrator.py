@@ -11,7 +11,7 @@ SGT = ZoneInfo("Asia/Singapore")
 
 
 class CancelOrchestrator:
-    def cancel_booking(self, booking_id, user_id, idempotency_key):
+    def cancel_booking(self, booking_id, user_id, idempotency_key, credits):
         booking_data = None
         class_data = None
         slot_incremented = False
@@ -68,21 +68,18 @@ class CancelOrchestrator:
             refund_policy = self._determine_refund_policy(class_data)
             print(f"Refund policy: {refund_policy}")
 
-            # amount = 1 (matches the booking debit amount)
-            amount = 1
-
             if refund_policy == "refund":
                 print("STEP 3b: Refunding credits via gRPC...")
                 wallet_response = refund_credits(
                     user_id=user_id,
-                    amount=amount,
+                    amount=credits,
                     transaction_id=idempotency_key
                 )
             else:
                 print("STEP 3b: Recording forfeit via gRPC...")
                 wallet_response = forfeit_credits(
                     user_id=user_id,
-                    amount=amount,
+                    amount=credits,
                     transaction_id=idempotency_key
                 )
 
