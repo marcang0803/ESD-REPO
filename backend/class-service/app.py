@@ -721,7 +721,27 @@ def increment_slot(class_id):
         cursor.close()
         conn.close()
 
-
+@app.route("/classes/provider/<int:provider_id>", methods=["GET"])
+def get_classes_by_provider(provider_id):
+    try:
+        conn = db.get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            """SELECT class_id, customer_id, class_name, date, start_time,
+                      duration, capacity, available_slots, status, location
+               FROM Class WHERE customer_id = %s ORDER BY date DESC""",
+            (provider_id,)
+        )
+        classes = cursor.fetchall()
+        for c in classes:
+            c["date"] = str(c["date"])
+            c["start_time"] = str(c["start_time"])
+        return jsonify({"classes": classes}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 @app.route("/health", methods=["GET"])
 def health():
   return jsonify({"status": "ok"}), 200
