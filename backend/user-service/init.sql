@@ -43,7 +43,7 @@ ON DUPLICATE KEY UPDATE
 -- ─────────────────────────────────────────────
 INSERT INTO users (id, name, email, phone, role, subscription_status)
 VALUES
-  (1001, 'Elena Lim',     'elena.lim@example.com',     '+6598765432', 'customer', 'ACTIVE'),
+  (1001, 'Marcus Ang',  'marcang0802@gmail.com',    '+6598765432', 'customer', 'ACTIVE'),
   (1002, 'Carol Ng',    'carol.ng@example.com',     '+6581234567', 'customer', 'ACTIVE'),
   (1003, 'David Koh',   'david.koh@example.com',    '+6592345678', 'customer', 'ACTIVE'),
   (1004, 'Eve Wong',    'eve.wong@example.com',      '+6583456789', 'customer', 'ACTIVE'),

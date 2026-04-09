@@ -480,7 +480,7 @@ export default function AdminHomepage() {
                           students={`${booked} / ${cls.capacity} Students`}
                           isActive={i === 0}
                         />
-                        {/* <button
+                        <button
                           onClick={() => openPayoutModal(cls)}
                           style={{
                             position:        'absolute',
@@ -498,7 +498,7 @@ export default function AdminHomepage() {
                           }}
                         >
                           Complete & Pay Out
-                        </button> */}
+                        </button>
                       </div>
                     )
                   })}
