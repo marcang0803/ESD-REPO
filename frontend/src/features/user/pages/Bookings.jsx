@@ -62,15 +62,38 @@ export default function Bookings({ upcomingBookings, pastBookings, startCancella
                             <Icon name="pin" size={11} color="#a0736a" />
                             <span style={{ fontSize: 12, color: '#7a5a52' }}>{booking.location}</span>
                           </div>
-                          {booking.canCancel === false ? (
-                            <span style={{ fontSize: 11, fontWeight: 700, color: '#8c4e35', background: 'rgba(140,78,53,0.08)', borderRadius: 8, padding: '4px 10px' }}>
-                              Booked
-                            </span>
-                          ) : (
-                            <button onClick={(event) => { event.stopPropagation(); startCancellation(booking) }} style={{ fontSize: 11, fontWeight: 600, color: '#ba1a1a', background: 'rgba(186,26,26,0.06)', border: 'none', borderRadius: 8, padding: '4px 10px', cursor: 'pointer' }}>
-                              Cancel
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                            <button
+                              onClick={(event) => { event.stopPropagation(); openBooking(booking) }}
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: '#4b4b4b',
+                                background: 'rgba(226,149,120,0.12)',
+                                border: '1px solid rgba(226,149,120,0.24)',
+                                borderRadius: 8,
+                                padding: '6px 10px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              View details
                             </button>
-                          )}
+                            <button
+                              onClick={(event) => { event.stopPropagation(); startCancellation(booking) }}
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: '#ba1a1a',
+                                background: 'rgba(186,26,26,0.08)',
+                                border: 'none',
+                                borderRadius: 8,
+                                padding: '6px 10px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Withdraw
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -94,18 +117,57 @@ export default function Bookings({ upcomingBookings, pastBookings, startCancella
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {pastBookings.map((booking) => (
-                <div key={booking.name + booking.date} style={{ background: 'white', borderRadius: 20, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 2px 10px rgba(140,78,53,0.05)' }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 14, overflow: 'hidden', flexShrink: 0 }}>
-                    <img src={booking.img} alt={booking.name} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7, filter: 'saturate(0.7)' }} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: '#a0736a', margin: '0 0 1px' }}>{booking.date}</p>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: '#1a1c1c', margin: '0 0 3px' }}>{booking.name}</p>
-                    <div style={{ display: 'flex', gap: 2 }}>
-                      {Array.from({ length: booking.stars }).map((_, index) => <Icon key={index} name="star" size={9} color="#e29578" />)}
+                <div key={booking.name + booking.date} style={{ background: 'white', borderRadius: 20, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12, boxShadow: '0 2px 10px rgba(140,78,53,0.05)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 14, overflow: 'hidden', flexShrink: 0 }}>
+                      <img src={booking.img} alt={booking.name} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7, filter: 'saturate(0.7)' }} />
                     </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: '#a0736a', margin: '0 0 1px' }}>{booking.date}</p>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: '#1a1c1c', margin: '0 0 3px' }}>{booking.name}</p>
+                      <div style={{ display: 'flex', gap: 2 }}>
+                        {Array.from({ length: booking.stars }).map((_, index) => <Icon key={index} name="star" size={9} color="#e29578" />)}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#53433e', fontFamily: "'Noto Serif', Georgia, serif" }}>{booking.credits}</span>
                   </div>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: '#53433e', fontFamily: "'Noto Serif', Georgia, serif" }}>{booking.credits}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => openBooking(booking)}
+                      style={{
+                        flex: 1,
+                        minWidth: 120,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: '#4b4b4b',
+                        background: 'rgba(226,149,120,0.12)',
+                        border: '1px solid rgba(226,149,120,0.24)',
+                        borderRadius: 8,
+                        padding: '8px 10px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      View details
+                    </button>
+                    <button
+                      disabled={!booking.canCancel}
+                      onClick={() => startCancellation(booking)}
+                      style={{
+                        flex: 1,
+                        minWidth: 120,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: booking.canCancel ? '#ba1a1a' : '#9a9a9a',
+                        background: booking.canCancel ? 'rgba(186,26,26,0.08)' : 'rgba(222,222,222,0.18)',
+                        border: 'none',
+                        borderRadius: 8,
+                        padding: '8px 10px',
+                        cursor: booking.canCancel ? 'pointer' : 'not-allowed',
+                      }}
+                    >
+                      Withdraw
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

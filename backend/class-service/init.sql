@@ -24,3 +24,12 @@ CREATE TABLE IF NOT EXISTS ClassHold (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (class_id) REFERENCES Class(class_id)
 );
+
+INSERT INTO Class (class_id, customer_id, class_name, date, start_time, duration, capacity, available_slots, status, location) VALUES
+(101, 1, 'Morning Reformer', '2026-04-11', '08:30:00', 50, 16, 8, 'Scheduled', 'Studio A, West Mall'),
+(102, 1, 'Ignite HIIT', '2026-04-12', '19:00:00', 40, 20, 2, 'Scheduled', 'Skyline Studio, ION Orchard'),
+(103, 1, 'Lunar Yin Yoga', '2026-04-13', '18:30:00', 60, 18, 5, 'Scheduled', 'Moon Hall, Riverfront'),
+(104, 1, 'Sunrise Flow', '2026-04-10', '07:00:00', 55, 15, 6, 'Scheduled', 'Studio B, West Mall'),
+(105, 1, 'Core Sculpt', '2026-04-09', '17:30:00', 45, 15, 3, 'Scheduled', 'Studio C, Orchard'),
+(106, 1, 'Evening Stretch', '2026-04-08', '18:00:00', 45, 12, 4, 'Scheduled', 'Skyline Studio, ION Orchard')
+ON DUPLICATE KEY UPDATE class_id = class_id;

@@ -130,8 +130,9 @@ class BookingOrchestrator:
                 except Exception as err:
                     print("Wallet rollback failed:", str(err))
 
+            message = str(e) or "Something went wrong. Please try again."
             return {
                 "success": False,
-                "message": "Something went wrong. Please try again.",
+                "message": message,
                 "http_status": 500
             }

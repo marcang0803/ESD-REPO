@@ -76,7 +76,7 @@ export function createUpcomingBooking(practice, bookingId, overrides = {}) {
     instructor: practice.instructor,
     location: practice.location,
     credits: practice.credits,
-    canCancel: false,
+    canCancel: true,
     ...overrides,
   }
 }
