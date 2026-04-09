@@ -17,6 +17,7 @@ import Wallet from './pages/Wallet.jsx'
 const tabScreens = new Set(['homepage', 'explore', 'bookings', 'wallet', 'profile'])
 const USER_ID = 1001
 const INITIAL_WALLET_BALANCE = 840
+const INITIAL_CREDITS_SPENT = 625
 const DEFAULT_PRACTICE = explorePractices[0]
 const INITIAL_LOCAL_BOOKING_ID = 10000
 const practiceOrder = new Map(explorePractices.map((practice, index) => [practice.classId, index]))
@@ -61,6 +62,7 @@ export default function RadiantSanctuary({ onSwitchToAdmin }) {
   const [bookedPracticeIds, setBookedPracticeIds] = useState(() => initialUpcomingBookings.map((booking) => booking.classId))
   const [nextLocalBookingId, setNextLocalBookingId] = useState(INITIAL_LOCAL_BOOKING_ID)
   const [walletBalance, setWalletBalance] = useState(INITIAL_WALLET_BALANCE)
+  const [creditsSpent, setCreditsSpent] = useState(INITIAL_CREDITS_SPENT)
   const [isCancelling, setIsCancelling] = useState(false)
   const [cancellationError, setCancellationError] = useState('')
   const [lastCancellation, setLastCancellation] = useState(null)
@@ -187,6 +189,9 @@ export default function RadiantSanctuary({ onSwitchToAdmin }) {
         if (!Number.isFinite(current)) return current
         return Math.max(current - practice.credits, 0)
       })
+      setCreditsSpent((current) => (
+        Number.isFinite(current) ? current + practice.credits : current
+      ))
 
       setUpcomingBookings((current) => sortUpcomingBookings([...current, booking]))
       setBookedPracticeIds((current) => (
@@ -216,6 +221,7 @@ export default function RadiantSanctuary({ onSwitchToAdmin }) {
     pastBookings,
     practices,
     walletBalance,
+    creditsSpent,
     isCancelling,
     cancellationError,
     lastCancellation,

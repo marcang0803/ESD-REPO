@@ -25,8 +25,12 @@ const milestones = [
   },
 ]
 
-export default function Wallet({ walletBalance, lastCancellation }) {
+export default function Wallet({ walletBalance, creditsSpent, lastCancellation }) {
   const balanceLabel = Number.isFinite(walletBalance) ? walletBalance.toLocaleString() : '--'
+  const creditsSpentLabel = Number.isFinite(creditsSpent) ? creditsSpent.toLocaleString() : '--'
+  const creditsSpentProgress = `${Number.isFinite(creditsSpent)
+    ? Math.min(Math.max((creditsSpent / 1000) * 100, 0), 100)
+    : 0}%`
 
   return (
     <div style={{ background: '#f9f9f9', minHeight: '100%', paddingBottom: 108, position: 'relative', overflow: 'hidden' }}>
@@ -93,11 +97,11 @@ export default function Wallet({ walletBalance, lastCancellation }) {
             </div>
             <p style={{ fontSize: 22, color: '#1a1c1c', fontFamily: 'Georgia, serif', margin: '16px 0 4px' }}>Credits Spent</p>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, paddingBottom: 16 }}>
-              <span style={{ fontSize: 30, fontWeight: 'bold', color: '#8c4e35', fontFamily: 'Georgia, serif' }}>840</span>
+              <span style={{ fontSize: 30, fontWeight: 'bold', color: '#8c4e35', fontFamily: 'Georgia, serif' }}>{creditsSpentLabel}</span>
               <span style={{ fontSize: 12, color: '#5b5d74' }}>Credits</span>
             </div>
             <div style={{ height: 4, background: '#eee', borderRadius: 9999 }}>
-              <div style={{ height: '100%', width: '65%', background: '#8c4e35', borderRadius: 9999 }} />
+              <div style={{ height: '100%', width: creditsSpentProgress, background: '#8c4e35', borderRadius: 9999 }} />
             </div>
           </div>
 
