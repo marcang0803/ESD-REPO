@@ -18,6 +18,17 @@ export default function CancelBooking({ goBack, selectedBooking, handleCancelBoo
       ]
     : []
 
+  const isWithin12Hours = () => {
+    if (!selectedBooking) return false;
+    const bookingDateTime = new Date(`${selectedBooking.date} ${selectedBooking.time}`);
+    const now = new Date();
+    const diffMs = bookingDateTime - now;
+    const diffHours = diffMs / (1000 * 60 * 60);
+    return diffHours < 12 && diffHours > 0;
+  };
+
+  const creditsForfeited = isWithin12Hours();
+
   return (
     <div style={{ background: '#f9f9f9', minHeight: '100%', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: -192, left: -96, width: 500, height: 500, borderRadius: 250, background: '#f6d0c2', filter: 'blur(40px)', opacity: 0.08, pointerEvents: 'none' }} />
@@ -36,12 +47,15 @@ export default function CancelBooking({ goBack, selectedBooking, handleCancelBoo
           <h1 style={{ fontFamily: 'Noto Serif, Georgia, serif', fontSize: 24, color: '#1a1c1c', margin: 0, textAlign: 'center', letterSpacing: -0.6 }}>Review Cancellation</h1>
           <div style={{ background: 'white', borderRadius: 32, padding: '22px 24px 24px', width: '100%', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 4, background: '#8c4e35' }} />
-            <p style={{ fontSize: 14, color: '#53433e', margin: '0 0 8px', textAlign: 'center', lineHeight: 1.625 }}>
-              Refund eligibility is determined by the backend cancellation policy when your request is processed.
-            </p>
-            <p style={{ fontSize: 12, color: '#5d5f5f', margin: 0, textAlign: 'center', fontStyle: 'italic', opacity: 0.7, lineHeight: 1.33 }}>
-              This screen only sends your bookingId and userId. Refund logic stays in the composite service.
-            </p>
+            {creditsForfeited ? (
+              <p style={{ fontSize: 14, color: '#53433e', margin: '0 0 8px', textAlign: 'center', lineHeight: 1.625 }}>
+                Cancellation within 12 hours: 20 credits will be forfeited.
+              </p>
+            ) : (
+              <p style={{ fontSize: 14, color: '#53433e', margin: '0 0 8px', textAlign: 'center', lineHeight: 1.625 }}>
+                Cancellation done more than 12 hours before: 20 credits will be refunded.
+              </p>
+            )}
           </div>
         </div>
 
@@ -77,7 +91,11 @@ export default function CancelBooking({ goBack, selectedBooking, handleCancelBoo
         ) : null}
 
         <p style={{ fontSize: 12, color: 'rgba(83,67,62,0.7)', textAlign: 'center', maxWidth: 280, lineHeight: 1.625, margin: '0 auto' }}>
-          We will send <strong>userId 1001</strong> and your selected <strong>bookingId</strong> to the cancellation composite. The backend decides whether credits are refunded.
+          {creditsForfeited ? (
+            'By confirming, you acknowledge that your session credits will be forfeited.'
+          ) : (
+            'By confirming, you acknowledge that you will be withdrawing from this class.'
+          )}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingTop: 8 }}>
