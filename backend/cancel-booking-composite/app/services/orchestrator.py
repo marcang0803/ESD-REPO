@@ -18,6 +18,8 @@ class CancelOrchestrator:
         wallet_response = None
         refund_policy = None
 
+        print(f"ORCHESTRATOR RECEIVED: credits={credits}, type={type(credits)}")
+
         try:
             # ─────────────────────────────────────────
             # STEP 1: Fetch booking & validate, then cancel

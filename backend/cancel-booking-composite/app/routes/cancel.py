@@ -8,11 +8,14 @@ orchestrator = CancelOrchestrator()
 @cancel_bp.route("/cancel", methods=["POST"])
 def cancel_booking():
     data = request.get_json() or {}
+    print(f"Cancel request data: {data}")
 
     booking_id = data.get("bookingId")
     user_id = data.get("userId")
     credits = data.get("credits")
     idempotency_key = request.headers.get("Idempotency-Key")
+
+    print(f"Extracted: booking_id={booking_id}, user_id={user_id}, credits={credits}, idempotency_key={idempotency_key}")
 
     if not booking_id or not user_id:
         return jsonify({
