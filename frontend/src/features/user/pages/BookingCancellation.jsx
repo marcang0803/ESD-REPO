@@ -1,9 +1,18 @@
-import { useState } from 'react'
 import Icon from '../components/Icon.jsx'
 
-export default function BookingCancellation({ setScreen }) {
-  const [selectedReason, setSelectedReason] = useState(null)
-  const reasons = ['Schedule Change', 'Booking Error', 'Plan Change', 'Other']
+function formatCredits(amount) {
+  if (!Number.isFinite(amount)) return null
+  return `${amount} credit${amount === 1 ? '' : 's'}`
+}
+
+export default function BookingCancellation({ setScreen, lastCancellation }) {
+  const result = lastCancellation?.result
+  const booking = lastCancellation?.booking
+  const refunded = result?.refund_policy === 'refund'
+  const walletAmount = Number(result?.wallet?.amount)
+  const walletBalance = Number(result?.wallet?.balance)
+  const balanceLabel = Number.isFinite(walletBalance) ? walletBalance.toLocaleString() : null
+  const refundLabel = formatCredits(walletAmount)
 
   return (
     <div style={{ background: '#f8f4f1', minHeight: '100%', position: 'relative', overflowY: 'auto', overflowX: 'hidden' }}>
@@ -23,20 +32,38 @@ export default function BookingCancellation({ setScreen }) {
             <circle cx="22" cy="22" r="3" fill="#8c4e35" />
           </svg>
         </div>
-        <h1 style={{ fontFamily: "'Noto Serif', Georgia, serif", fontSize: 28, fontWeight: 600, color: '#380d00', margin: '0 0 10px', lineHeight: 1.25 }}>Cancellation Confirmed</h1>
-        <p style={{ fontSize: 15, fontWeight: 700, color: '#1a1c1c', margin: '0 0 8px' }}>Solar Vinyasa Flow</p>
-        <p style={{ fontSize: 14, color: 'rgba(186,26,26,0.67)', margin: '0 0 32px', fontWeight: 500 }}>20 credits have been forfeited</p>
+        <h1 style={{ fontFamily: "'Noto Serif', Georgia, serif", fontSize: 28, fontWeight: 600, color: '#380d00', margin: '0 0 10px', lineHeight: 1.25 }}>
+          {result?.success ? 'Cancellation Confirmed' : 'No Cancellation Result'}
+        </h1>
+        <p style={{ fontSize: 15, fontWeight: 700, color: '#1a1c1c', margin: '0 0 8px' }}>{booking?.name || 'Your selected booking'}</p>
+        <p style={{ fontSize: 14, color: refunded ? '#2e7d32' : 'rgba(186,26,26,0.67)', margin: '0 0 32px', fontWeight: 500 }}>
+          {refunded
+            ? `${refundLabel || 'Credits'} refunded`
+            : 'No refund due to backend cancellation policy'}
+        </p>
         <div style={{ width: '100%', background: 'white', borderRadius: 28, padding: '20px 20px 22px', boxShadow: '0 4px 20px rgba(140,78,53,0.07)', marginBottom: 36, textAlign: 'left' }}>
-          <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: '#53433e', margin: '0 0 14px' }}>Reason for Cancellation</p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {reasons.map((r) => {
-              const active = selectedReason === r
-              return (
-                <button key={r} onClick={() => setSelectedReason(active ? null : r)} style={{ border: active ? 'none' : '1.5px solid rgba(140,78,53,0.18)', borderRadius: 9999, padding: '10px 18px', fontSize: 13, cursor: 'pointer', background: active ? 'linear-gradient(11deg, #8c4e35 0%, #e29578 100%)' : 'rgba(248,244,241,0.8)', color: active ? 'white' : '#6f3720', fontWeight: active ? 600 : 500, boxShadow: active ? '0 4px 12px rgba(140,78,53,0.2)' : 'none' }}>
-                  {r}
-                </button>
-              )
-            })}
+          <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: '#53433e', margin: '0 0 14px' }}>Backend Response</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 700, color: '#8c4e35' }}>Composite message</p>
+              <p style={{ margin: 0, fontSize: 14, color: '#53433e', lineHeight: 1.5 }}>{result?.message || 'No response available.'}</p>
+            </div>
+            <div>
+              <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 700, color: '#8c4e35' }}>Refund policy</p>
+              <p style={{ margin: 0, fontSize: 14, color: '#53433e', lineHeight: 1.5, textTransform: 'capitalize' }}>{result?.refund_policy || 'Unavailable'}</p>
+            </div>
+            {result?.wallet?.message ? (
+              <div>
+                <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 700, color: '#8c4e35' }}>Wallet response</p>
+                <p style={{ margin: 0, fontSize: 14, color: '#53433e', lineHeight: 1.5 }}>{result.wallet.message}</p>
+              </div>
+            ) : null}
+            {balanceLabel ? (
+              <div>
+                <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 700, color: '#8c4e35' }}>Updated credit balance</p>
+                <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#1a1c1c' }}>{balanceLabel}</p>
+              </div>
+            ) : null}
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>

@@ -27,7 +27,8 @@ function pwaPlugin() {
 export default defineConfig(({ mode }) => {
   const repoRoot = resolve(__dirname, '..')
   const env = loadEnv(mode, repoRoot, '')
-  const backendTarget = env.VITE_BACKEND_TARGET || 'http://127.0.0.1:8000'
+  const userServiceTarget = env.VITE_USER_SERVICE_URL || 'http://127.0.0.1:5010'
+  const cancelBookingTarget = env.VITE_CANCEL_BOOKING_URL || 'http://127.0.0.1:5004'
 
   return {
     envDir: repoRoot,
@@ -36,7 +37,12 @@ export default defineConfig(({ mode }) => {
       host: true,
       proxy: {
         '/users': {
-          target: backendTarget,
+          target: userServiceTarget,
+          changeOrigin: true,
+          secure: false
+        },
+        '/cancel': {
+          target: cancelBookingTarget,
           changeOrigin: true,
           secure: false
         }

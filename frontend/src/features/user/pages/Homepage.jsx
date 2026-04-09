@@ -1,8 +1,7 @@
-
 import Icon from '../components/Icon.jsx'
 import { imgElenaVance, imgHPPowerYoga } from '../assets.js'
 
-export default function Homepage({ setScreen, user }) {
+export default function Homepage({ setScreen, user, nextBooking, startCancellation, openBooking }) {
   return (
     <div style={{ background: '#f9f9f9', minHeight: '100%', paddingBottom: 108, position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: -26, left: -29, width: 480, height: 480, borderRadius: 9999, background: 'rgba(226,149,120,0.15)', filter: 'blur(40px)', pointerEvents: 'none' }} />
@@ -33,25 +32,46 @@ export default function Homepage({ setScreen, user }) {
           <div style={{ background: '#f3f3f3', borderRadius: 28, padding: 4 }}>
             <div style={{ background: 'white', borderRadius: 20, overflow: 'hidden' }}>
               <div style={{ height: 180, position: 'relative', overflow: 'hidden' }}>
-                <img src={imgHPPowerYoga} alt="Solar Vinyasa Flow" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={nextBooking?.img || imgHPPowerYoga} alt={nextBooking?.name || 'Upcoming practice'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div style={{ padding: '20px 20px 16px' }}>
-                <p style={{ fontSize: 10, fontWeight: 600, color: '#8c4e35', textTransform: 'uppercase', letterSpacing: 1.5, margin: '0 0 4px' }}>Tomorrow, 08:30 AM</p>
-                <h3 style={{ fontFamily: 'Georgia, serif', fontSize: 22, color: '#1a1c1c', margin: '0 0 12px' }}>Solar Vinyasa Flow</h3>
-                <div style={{ display: 'flex', gap: 20, marginBottom: 8 }}>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" stroke="#5b5d74" strokeWidth="1.5" /></svg>
-                    <span style={{ fontSize: 14, color: '#5b5d74' }}>Marcus Thorne</span>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 20 }}>
-                  <svg width="12" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z" stroke="#5b5d74" strokeWidth="1.5" fill="none" /></svg>
-                  <span style={{ fontSize: 14, color: '#5b5d74' }}>Sanctuary Studio A</span>
-                </div>
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <button onClick={() => setScreen('classDetails')} style={{ flex: 1, background: '#e2e2e2', border: 'none', borderRadius: 9999, padding: '12px 0', fontSize: 14, fontWeight: 600, color: '#1a1c1c', cursor: 'pointer' }}>View Details</button>
-                  <button onClick={() => setScreen('cancelBooking')} style={{ background: 'transparent', border: 'none', padding: '12px 16px', fontSize: 14, fontWeight: 500, color: '#5b5d74', cursor: 'pointer' }}>Cancel</button>
-                </div>
+                {nextBooking ? (
+                  <>
+                    <p style={{ fontSize: 10, fontWeight: 600, color: '#8c4e35', textTransform: 'uppercase', letterSpacing: 1.5, margin: '0 0 4px' }}>{nextBooking.date}, {nextBooking.time}</p>
+                    <h3 style={{ fontFamily: 'Georgia, serif', fontSize: 22, color: '#1a1c1c', margin: '0 0 12px' }}>{nextBooking.name}</h3>
+                    <div style={{ display: 'flex', gap: 20, marginBottom: 8 }}>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" stroke="#5b5d74" strokeWidth="1.5" /></svg>
+                        <span style={{ fontSize: 14, color: '#5b5d74' }}>{nextBooking.instructor}</span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 20 }}>
+                      <svg width="12" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z" stroke="#5b5d74" strokeWidth="1.5" fill="none" /></svg>
+                      <span style={{ fontSize: 14, color: '#5b5d74' }}>{nextBooking.location}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      <button onClick={() => openBooking(nextBooking)} style={{ flex: 1, background: '#e2e2e2', border: 'none', borderRadius: 9999, padding: '12px 0', fontSize: 14, fontWeight: 600, color: '#1a1c1c', cursor: 'pointer' }}>View Details</button>
+                      {nextBooking.canCancel === false ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 16px', fontSize: 14, fontWeight: 600, color: '#8c4e35' }}>
+                          Booked
+                        </div>
+                      ) : (
+                        <button onClick={() => startCancellation(nextBooking)} style={{ background: 'transparent', border: 'none', padding: '12px 16px', fontSize: 14, fontWeight: 500, color: '#5b5d74', cursor: 'pointer' }}>Cancel</button>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ fontSize: 10, fontWeight: 600, color: '#8c4e35', textTransform: 'uppercase', letterSpacing: 1.5, margin: '0 0 4px' }}>Up to date</p>
+                    <h3 style={{ fontFamily: 'Georgia, serif', fontSize: 22, color: '#1a1c1c', margin: '0 0 12px' }}>No upcoming bookings</h3>
+                    <p style={{ fontSize: 14, color: '#5b5d74', lineHeight: 1.6, margin: '0 0 20px' }}>
+                      Your schedule is clear for now. Explore classes whenever you are ready to book the next session.
+                    </p>
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      <button onClick={() => setScreen('explore')} style={{ flex: 1, background: 'linear-gradient(11deg, #8c4e35 0%, #e29578 100%)', border: 'none', borderRadius: 9999, padding: '12px 0', fontSize: 14, fontWeight: 600, color: 'white', cursor: 'pointer' }}>Explore Classes</button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -85,8 +105,8 @@ export default function Homepage({ setScreen, user }) {
                 <circle cx="240" cy="30" r="5" fill="#e29578" />
               </svg>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d, i) => (
-                  <span key={d} style={{ fontSize: 10, color: i === 4 ? '#8c4e35' : '#5b5d74', fontWeight: 500 }}>{d}</span>
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
+                  <span key={day} style={{ fontSize: 10, color: index === 4 ? '#8c4e35' : '#5b5d74', fontWeight: 500 }}>{day}</span>
                 ))}
               </div>
             </div>
@@ -95,17 +115,17 @@ export default function Homepage({ setScreen, user }) {
           {[
             { label: 'Active Minutes', value: '320', unit: 'min', icon: 'activeMinutes' },
             { label: 'Sessions Completed', value: '6', unit: 'Practices', icon: 'sessionsCompleted' },
-          ].map((s) => (
-            <div key={s.label} style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 40, padding: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+          ].map((stat) => (
+            <div key={stat.label} style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 40, padding: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
               <div>
-                <p style={{ fontSize: 10, fontWeight: 600, color: '#5b5d74', textTransform: 'uppercase', letterSpacing: 2, margin: '0 0 4px' }}>{s.label}</p>
+                <p style={{ fontSize: 10, fontWeight: 600, color: '#5b5d74', textTransform: 'uppercase', letterSpacing: 2, margin: '0 0 4px' }}>{stat.label}</p>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                  <span style={{ fontSize: 28, fontFamily: 'Georgia, serif', color: '#1a1c1c' }}>{s.value}</span>
-                  <span style={{ fontSize: 14, color: '#5b5d74' }}>{s.unit}</span>
+                  <span style={{ fontSize: 28, fontFamily: 'Georgia, serif', color: '#1a1c1c' }}>{stat.value}</span>
+                  <span style={{ fontSize: 14, color: '#5b5d74' }}>{stat.unit}</span>
                 </div>
               </div>
               <div style={{ width: 44, height: 44, borderRadius: 9999, background: 'rgba(226,149,120,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
-                <Icon name={s.icon} size={18} color="#8c4e35" />
+                <Icon name={stat.icon} size={18} color="#8c4e35" />
               </div>
             </div>
           ))}
@@ -116,7 +136,7 @@ export default function Homepage({ setScreen, user }) {
               <span style={{ fontSize: 13, fontWeight: 600, color: '#8c4e35', textTransform: 'uppercase', letterSpacing: 0.35 }}>Radiant Insight</span>
             </div>
             <p style={{ fontSize: 14, color: '#5b5d74', lineHeight: 1.6, margin: 0, textAlign: 'center' }}>
-              You're <strong style={{ color: '#8c4e35' }}>82%</strong> towards your weekly goal. One more Solar Vinyasa session tomorrow will bring you to your peak performance zone!
+              You're <strong style={{ color: '#8c4e35' }}>82%</strong> towards your weekly goal. One more practice will bring you closer to your peak performance zone.
             </p>
           </div>
         </div>

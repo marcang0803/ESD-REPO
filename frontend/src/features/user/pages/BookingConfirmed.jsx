@@ -1,7 +1,18 @@
 import Icon from '../components/Icon.jsx'
-import { imgHPPowerYoga } from '../assets.js'
 
-export default function BookingConfirmed({ setScreen }) {
+function formatCredits(value) {
+  return Number.isFinite(value) ? value.toLocaleString() : '--'
+}
+
+export default function BookingConfirmed({ setScreen, walletBalance, confirmationPractice }) {
+  const practice = confirmationPractice
+  const bookingCost = Number(practice?.credits)
+  const sessionDetails = [
+    { icon: 'time', label: 'Date & Time', value: `${practice?.date || '--'} - ${practice?.time || '--'}` },
+    { icon: 'person', label: 'Instructor', value: practice?.instructor || '--' },
+    { icon: 'location', label: 'Location', value: practice?.location || '--' },
+  ]
+
   return (
     <div style={{ background: '#f8f4f1', minHeight: '100%', position: 'relative', overflowY: 'auto', overflowX: 'hidden' }}>
       <div style={{ position: 'absolute', top: -100, left: -80, width: 360, height: 360, borderRadius: 9999, background: '#ffb59a', filter: 'blur(80px)', opacity: 0.12, pointerEvents: 'none' }} />
@@ -19,19 +30,15 @@ export default function BookingConfirmed({ setScreen }) {
         <p style={{ fontSize: 14, color: '#7a5a52', margin: '0 0 36px', lineHeight: 1.6 }}>Your session has been booked. See you there!</p>
         <div style={{ width: '100%', background: 'white', borderRadius: 28, overflow: 'hidden', boxShadow: '0 8px 32px rgba(140,78,53,0.09)', marginBottom: 16 }}>
           <div style={{ height: 100, position: 'relative', overflow: 'hidden' }}>
-            <img src={imgHPPowerYoga} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={practice?.img} alt={practice?.name || 'Booked practice'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'rgba(26,28,28,0.4)' }} />
             <div style={{ position: 'absolute', bottom: 12, left: 16, right: 16 }}>
               <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', margin: '0 0 2px' }}>Your Session</p>
-              <p style={{ fontFamily: "'Noto Serif', Georgia, serif", fontSize: 16, color: 'white', fontWeight: 600, margin: 0 }}>Morning Reformer</p>
+              <p style={{ fontFamily: "'Noto Serif', Georgia, serif", fontSize: 16, color: 'white', fontWeight: 600, margin: 0 }}>{practice?.name || 'Booked Practice'}</p>
             </div>
           </div>
           <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[
-              { icon: 'time', label: 'Date & Time', value: 'Friday 11 April • 08:30 AM' },
-              { icon: 'person', label: 'Instructor', value: 'Marcus Thorne' },
-              { icon: 'location', label: 'Location', value: 'Studio A, West Mall' },
-            ].map((item) => (
+            {sessionDetails.map((item) => (
               <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 32, height: 32, borderRadius: 9999, background: 'rgba(140,78,53,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Icon name={item.icon} size={13} color="#8c4e35" />
@@ -45,8 +52,14 @@ export default function BookingConfirmed({ setScreen }) {
           </div>
           <div style={{ background: 'rgba(255,219,206,0.35)', padding: '13px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 13, color: '#53433e', fontWeight: 500 }}>Credits deducted</span>
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#8c4e35', fontFamily: "'Noto Serif', Georgia, serif" }}>− 15</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: '#8c4e35', fontFamily: "'Noto Serif', Georgia, serif" }}>
+              {Number.isFinite(bookingCost) ? `- ${bookingCost}` : '--'}
+            </span>
           </div>
+        </div>
+        <div style={{ width: '100%', background: 'rgba(255,255,255,0.72)', borderRadius: 20, padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <span style={{ fontSize: 13, color: '#53433e', fontWeight: 500 }}>Updated wallet balance</span>
+          <span style={{ fontSize: 16, fontWeight: 700, color: '#8c4e35', fontFamily: "'Noto Serif', Georgia, serif" }}>{formatCredits(walletBalance)}</span>
         </div>
         <div style={{ width: '100%', background: 'rgba(246,199,126,0.15)', border: '1.5px solid rgba(246,199,126,0.4)', borderRadius: 20, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 36, textAlign: 'left' }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#c8841c" strokeWidth="1.6" /><path d="M12 8v4M12 16h.01" stroke="#c8841c" strokeWidth="1.8" strokeLinecap="round" /></svg>

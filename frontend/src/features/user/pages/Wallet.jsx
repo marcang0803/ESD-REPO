@@ -1,8 +1,6 @@
-
 import Icon from '../components/Icon.jsx'
 import { imgCWProfile, imgCWLunarBreath, imgCWSolarGratitude } from '../assets.js'
 
-// Milestones data (pure data, no JSX)
 const milestones = [
   {
     icon: 'zenMaster',
@@ -25,9 +23,11 @@ const milestones = [
     opacity: 0.4,
     customSvg: 'soulFlow',
   },
-];
+]
 
-export default function Wallet() {
+export default function Wallet({ walletBalance, lastCancellation }) {
+  const balanceLabel = Number.isFinite(walletBalance) ? walletBalance.toLocaleString() : '--'
+
   return (
     <div style={{ background: '#f9f9f9', minHeight: '100%', paddingBottom: 108, position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: -80, left: -80, width: 500, height: 500, borderRadius: 250, background: '#ffb59a', filter: 'blur(40px)', opacity: 0.08, pointerEvents: 'none' }} />
@@ -48,8 +48,13 @@ export default function Wallet() {
             <div style={{ position: 'absolute', inset: 0, borderRadius: 9999, background: 'radial-gradient(circle, rgba(255,219,206,1) 0%, rgba(241,184,163,1) 20%, rgba(226,149,120,1) 40%, rgba(226,149,120,0) 70%)', filter: 'blur(20px)' }} />
             <div style={{ position: 'relative', width: 248, height: 248, borderRadius: 9999, background: 'rgba(255,255,255,0.4)', backdropFilter: 'blur(32px)', border: '1px solid rgba(255,255,255,0.3)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
               <p style={{ fontSize: 10, color: '#5b5d74', letterSpacing: 3, textTransform: 'uppercase', margin: '0 0 4px' }}>Current Balance</p>
-              <p style={{ fontSize: 56, fontWeight: 'bold', color: '#8c4e35', margin: 0, fontFamily: 'Georgia, serif', letterSpacing: -1.5 }}>1,240</p>
+              <p style={{ fontSize: 56, fontWeight: 'bold', color: '#8c4e35', margin: 0, fontFamily: 'Georgia, serif', letterSpacing: -1.5 }}>{balanceLabel}</p>
               <p style={{ fontSize: 13, fontWeight: 'bold', color: '#e29578', letterSpacing: 1.4, margin: '4px 0 0' }}>CREDITS</p>
+              <p style={{ fontSize: 11, color: '#5b5d74', margin: '8px 0 0', textAlign: 'center', maxWidth: 180, lineHeight: 1.5 }}>
+                {Number.isFinite(walletBalance)
+                  ? 'Current available credits for Elena Lim.'
+                  : 'Balance will update here when the cancel-booking composite returns a wallet balance.'}
+              </p>
             </div>
           </div>
 
@@ -60,6 +65,25 @@ export default function Wallet() {
         </div>
 
         <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {lastCancellation?.result ? (
+            <div style={{ background: 'white', borderRadius: 32, padding: 28, boxShadow: '0 20px 50px 0 rgba(140,78,53,0.02)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                <div>
+                  <p style={{ fontSize: 10, color: '#5b5d74', textTransform: 'uppercase', letterSpacing: 1 }}>Latest wallet update</p>
+                  <p style={{ fontSize: 22, color: '#1a1c1c', fontFamily: 'Georgia, serif', margin: '10px 0 6px' }}>
+                    {lastCancellation.result.refund_policy === 'refund' ? 'Credits Refunded' : 'No Refund Applied'}
+                  </p>
+                  <p style={{ margin: 0, fontSize: 14, color: '#5b5d74', lineHeight: 1.6 }}>
+                    {lastCancellation.result.wallet?.message || lastCancellation.result.message}
+                  </p>
+                </div>
+                <div style={{ width: 52, height: 52, borderRadius: 9999, background: 'rgba(140,78,53,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon name={lastCancellation.result.refund_policy === 'refund' ? 'undo' : 'creditsSpent'} size={22} color="#8c4e35" />
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <div style={{ background: 'white', borderRadius: 32, padding: 28, boxShadow: '0 20px 50px 0 rgba(140,78,53,0.02)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ width: 52, height: 52, borderRadius: 9999, background: 'rgba(140,78,53,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -102,56 +126,56 @@ export default function Wallet() {
               <span style={{ fontSize: 20, fontFamily: 'Georgia, serif', color: '#1a1c1c' }}>Milestones</span>
             </div>
             <div style={{ display: 'flex', gap: 16 }}>
-              {milestones.map((m) => (
-                <div key={m.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, opacity: m.opacity }}>
-                  <div style={{ width: 52, height: 52, borderRadius: 9999, background: m.bg, border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                    {m.customSvg === 'zenMaster' && (
+              {milestones.map((milestone) => (
+                <div key={milestone.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, opacity: milestone.opacity }}>
+                  <div style={{ width: 52, height: 52, borderRadius: 9999, background: milestone.bg, border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                    {milestone.customSvg === 'zenMaster' && (
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="#8c4e35" width="32" height="32">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
                       </svg>
                     )}
-                    {m.customSvg === 'tenSessions' && (
+                    {milestone.customSvg === 'tenSessions' && (
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="#8c4e35" width="32" height="32">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0 1 18 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3 1.5 1.5 3-3.75" />
                       </svg>
                     )}
-                    {m.customSvg === 'soulFlow' && (
+                    {milestone.customSvg === 'soulFlow' && (
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="#8c4e35" width="32" height="32">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
                       </svg>
                     )}
-                    {!m.customSvg && <Icon name={m.icon} size={20} color="#8c4e35" />}
+                    {!milestone.customSvg && <Icon name={milestone.icon} size={20} color="#8c4e35" />}
                   </div>
-                  <span style={{ fontSize: 9, fontWeight: 600, color: '#53433e', textTransform: 'uppercase', letterSpacing: -0.45 }}>{m.label}</span>
+                  <span style={{ fontSize: 9, fontWeight: 600, color: '#53433e', textTransform: 'uppercase', letterSpacing: -0.45 }}>{milestone.label}</span>
                 </div>
               ))}
             </div>
           </div>
-          {/* Ledger transactions */}
+
           {[
             { img: imgCWSolarGratitude, name: 'Solar Gratitude', loc: 'West Mall', lead: 'Lead: Elena Thorne', amount: '-45', date: 'Oct 24, 08:30 AM' },
             { img: imgCWLunarBreath, name: 'Lunar Breath', loc: 'ION Orchard', lead: 'Lead: Julian Sol', amount: '-60', date: 'Oct 22, 06:00 PM' },
-          ].map((t) => (
-            <div key={t.name} style={{ background: 'white', borderRadius: 24, padding: 20, marginBottom: 12 }}>
+          ].map((transaction) => (
+            <div key={transaction.name} style={{ background: 'white', borderRadius: 24, padding: 20, marginBottom: 12 }}>
               <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: 12 }}>
                 <div style={{ width: 52, height: 60, borderRadius: 14, overflow: 'hidden', background: 'rgba(140,78,53,0.1)', flexShrink: 0 }}>
-                  <img src={t.img} alt={t.name} style={{ width: '131%', height: '100%', objectFit: 'cover', marginLeft: '-16%', opacity: 0.8 }} />
+                  <img src={transaction.img} alt={transaction.name} style={{ width: '131%', height: '100%', objectFit: 'cover', marginLeft: '-16%', opacity: 0.8 }} />
                 </div>
                 <div>
-                  <p style={{ fontSize: 17, fontFamily: 'Georgia, serif', color: '#1a1c1c', margin: '0 0 4px' }}>{t.name}</p>
+                  <p style={{ fontSize: 17, fontFamily: 'Georgia, serif', color: '#1a1c1c', margin: '0 0 4px' }}>{transaction.name}</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                     <Icon name="pin" size={12} color="#5b5d74" />
-                    <p style={{ fontSize: 13, color: '#5b5d74', margin: 0 }}>{t.loc}</p>
+                    <p style={{ fontSize: 13, color: '#5b5d74', margin: 0 }}>{transaction.loc}</p>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Icon name="person" size={12} color="#5b5d74" />
-                    <p style={{ fontSize: 13, color: '#5b5d74', margin: 0 }}>{t.lead}</p>
+                    <p style={{ fontSize: 13, color: '#5b5d74', margin: 0 }}>{transaction.lead}</p>
                   </div>
                 </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 20, fontWeight: 'bold', color: '#8c4e35', fontFamily: 'Georgia, serif' }}>{t.amount}</span>
-                <span style={{ fontSize: 10, color: '#5b5d74', textTransform: 'uppercase', letterSpacing: 1 }}>{t.date}</span>
+                <span style={{ fontSize: 20, fontWeight: 'bold', color: '#8c4e35', fontFamily: 'Georgia, serif' }}>{transaction.amount}</span>
+                <span style={{ fontSize: 10, color: '#5b5d74', textTransform: 'uppercase', letterSpacing: 1 }}>{transaction.date}</span>
               </div>
             </div>
           ))}
@@ -197,5 +221,5 @@ export default function Wallet() {
         </div>
       </div>
     </div>
-  );
+  )
 }
