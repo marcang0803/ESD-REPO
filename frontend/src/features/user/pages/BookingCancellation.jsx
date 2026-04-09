@@ -38,8 +38,8 @@ export default function BookingCancellation({ setScreen, lastCancellation }) {
         <p style={{ fontSize: 15, fontWeight: 700, color: '#1a1c1c', margin: '0 0 8px' }}>{booking?.name || 'Your selected booking'}</p>
         <p style={{ fontSize: 14, color: refunded ? '#2e7d32' : 'rgba(186,26,26,0.67)', margin: '0 0 32px', fontWeight: 500 }}>
           {refunded
-            ? `${refundLabel || 'Credits'} refunded`
-            : 'No refund due to backend cancellation policy'}
+            ? 'Booking cancelled. Credits refunded.'
+            : 'Booking cancelled. Credits forfeited due to late cancellation.'}
         </p>
         <div style={{ width: '100%', background: 'white', borderRadius: 28, padding: '20px 20px 22px', boxShadow: '0 4px 20px rgba(140,78,53,0.07)', marginBottom: 36, textAlign: 'left' }}>
           <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: '#53433e', margin: '0 0 14px' }}>Backend Response</p>

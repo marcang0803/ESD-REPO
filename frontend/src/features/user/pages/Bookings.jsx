@@ -24,7 +24,9 @@ export default function Bookings({ upcomingBookings, pastBookings, startCancella
             <div style={{ marginBottom: 18, borderRadius: 20, background: 'rgba(46, 125, 50, 0.08)', border: '1px solid rgba(46, 125, 50, 0.14)', padding: '14px 16px' }}>
               <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 700, letterSpacing: 1.1, textTransform: 'uppercase', color: '#2e7d32' }}>Latest cancellation</p>
               <p style={{ margin: 0, fontSize: 14, color: '#34523a', lineHeight: 1.5 }}>
-                {lastCancellation.result.refund_policy === 'refund' ? 'Credits refunded.' : 'No refund applied.'} {lastCancellation.result.message}
+                {lastCancellation.result.refund_policy === 'refund'
+                  ? 'Booking cancelled. Credits refunded.'
+                  : 'Booking cancelled. Credits forfeited due to late cancellation.'}
               </p>
             </div>
           ) : null}

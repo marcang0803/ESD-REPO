@@ -75,7 +75,7 @@ export default function Wallet({ walletBalance, creditsSpent, lastCancellation }
                 <div>
                   <p style={{ fontSize: 10, color: '#5b5d74', textTransform: 'uppercase', letterSpacing: 1 }}>Latest wallet update</p>
                   <p style={{ fontSize: 22, color: '#1a1c1c', fontFamily: 'Georgia, serif', margin: '10px 0 6px' }}>
-                    {lastCancellation.result.refund_policy === 'refund' ? 'Credits Refunded' : 'No Refund Applied'}
+                    {lastCancellation.result.refund_policy === 'refund' ? 'Credits Refunded' : 'Credits Forfeited'}
                   </p>
                   <p style={{ margin: 0, fontSize: 14, color: '#5b5d74', lineHeight: 1.6 }}>
                     {lastCancellation.result.wallet?.message || lastCancellation.result.message}

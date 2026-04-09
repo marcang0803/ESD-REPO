@@ -34,6 +34,20 @@ export async function fetchUser(userId) {
   return payload
 }
 
+export async function fetchUserBookings(userId) {
+  const response = await fetch('/user-bookings')
+  const payload = await readJson(response)
+
+  if (!response.ok) {
+    throw new Error(getErrorMessage(payload, 'Failed to fetch bookings'))
+  }
+
+  const allBookings = Array.isArray(payload?.data) ? payload.data : []
+  return allBookings.filter(
+    (b) => Number(b.user_id) === userId && b.status === 'booked'
+  )
+}
+
 export async function fetchWalletBalance(userId) {
   const response = await fetch(`/wallets/${userId}`)
   const payload = await readJson(response)

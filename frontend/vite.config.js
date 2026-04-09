@@ -31,6 +31,7 @@ export default defineConfig(({ mode }) => {
   const walletServiceTarget = env.VITE_WALLET_SERVICE_URL || 'http://127.0.0.1:5005'
   const bookClassTarget = env.VITE_BOOK_CLASS_URL || 'http://127.0.0.1:5003'
   const cancelBookingTarget = env.VITE_CANCEL_BOOKING_URL || 'http://127.0.0.1:5004'
+  const bookingServiceTarget = env.VITE_BOOKING_SERVICE_URL || 'http://127.0.0.1:6005'
 
   return {
     envDir: repoRoot,
@@ -57,6 +58,12 @@ export default defineConfig(({ mode }) => {
           target: cancelBookingTarget,
           changeOrigin: true,
           secure: false
+        },
+        '/user-bookings': {
+          target: bookingServiceTarget,
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/user-bookings/, '/booking')
         }
       }
     },

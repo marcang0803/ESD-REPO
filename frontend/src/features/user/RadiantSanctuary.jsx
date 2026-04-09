@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { bookClass, cancelBooking, fetchUser, fetchWalletBalance, fetchWalletLedger } from './api.js'
+import { bookClass, cancelBooking, fetchUser, fetchUserBookings, fetchWalletBalance, fetchWalletLedger } from './api.js'
 import { createUpcomingBooking, explorePractices, initialPastBookings, initialUpcomingBookings } from './bookingData.js'
 import BottomNav from './components/BottomNav.jsx'
 import BookingCancellation from './pages/BookingCancellation.jsx'
@@ -100,6 +100,25 @@ export default function RadiantSanctuary({ onSwitchToAdmin }) {
       })
       .catch((error) => {
         console.error('Failed to fetch user:', error)
+      })
+
+    fetchUserBookings(USER_ID)
+      .then((records) => {
+        const fetched = records
+          .map((record) => {
+            const practice = explorePractices.find((p) => p.classId === record.class_id)
+            if (!practice) return null
+            return createUpcomingBooking(practice, record.booking_id)
+          })
+          .filter(Boolean)
+
+        if (fetched.length > 0) {
+          setUpcomingBookings(sortUpcomingBookings(fetched))
+          setBookedPracticeIds(fetched.map((b) => b.classId))
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to fetch existing bookings:', error)
       })
 
     refreshWalletState().catch((error) => {
