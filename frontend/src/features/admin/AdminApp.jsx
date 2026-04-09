@@ -4,6 +4,7 @@ import AdminHomepage from './pages/AdminHomepage.jsx'
 import AdminWallet from './pages/AdminWallet.jsx'
 import AdminStatistics from './pages/AdminStatistics.jsx'
 import AdminProfile from './pages/AdminProfile.jsx'
+import ProviderDashboard from './pages/ProviderDashboard.jsx'
 
 // ─── AdminApp ────────────────────────────────────────────────────────────────
 // State-based router for all admin pages.
@@ -17,22 +18,23 @@ export default function AdminApp({ onSwitchToUser }) {
   }, [tab])
 
   const pages = {
-    home:    <AdminHomepage />,
-    stats:   <AdminStatistics />,
-    wallet:  <AdminWallet />,
+    home: <AdminHomepage />,
+    payouts: <ProviderDashboard />,
+    stats: <AdminStatistics />,
+    wallet: <AdminWallet />,
     profile: <AdminProfile onSwitchToUser={onSwitchToUser} />,
   }
 
   return (
     <div
       style={{
-        position:        'relative',
-        width:           '100%',
-        maxWidth:        390,
-        margin:          '0 auto',
-        minHeight:       '100vh',
+        position: 'relative',
+        width: '100%',
+        maxWidth: 390,
+        margin: '0 auto',
+        minHeight: '100vh',
         backgroundColor: '#fef8f4',
-        overflowX:       'hidden',
+        overflowX: 'hidden',
       }}
     >
       {pages[tab]}

@@ -340,15 +340,20 @@ services:
     environment:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
       # FIX: use container-name URLs, not localhost
       USER_SERVICE_URL: http://user-service:5001
       PAYMENT_SERVICE_URL: http://payment-service:5001
+      NOTIFICATION_SERVICE_URL: http://notification-service:5000
     depends_on:
       rabbitmq:
         condition: service_healthy
       user-service:
         condition: service_started
       payment-service:
+        condition: service_started
+      notification-service:
         condition: service_started
     restart: always
 

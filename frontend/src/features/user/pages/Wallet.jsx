@@ -31,10 +31,10 @@ const milestones = [
 
 // ── Top Up Modal ──────────────────────────────────────────────────────────────
 function TopUpModal({ onClose, onSuccess }) {
-  const [packages, setPackages]   = useState([])
-  const [selected, setSelected]   = useState(null)
-  const [loading, setLoading]     = useState(false)
-  const [error, setError]         = useState(null)
+  const [packages, setPackages] = useState([])
+  const [selected, setSelected] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     fetch(`${PAYMENT_SERVICE_URL}/topup/packages`)
@@ -52,9 +52,9 @@ function TopUpModal({ onClose, onSuccess }) {
     setError(null)
     try {
       const res = await fetch(`${PAYMENT_SERVICE_URL}/topup/checkout`, {
-        method:  'POST',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ user_id: USER_ID, package_id: selected }),
+        body: JSON.stringify({ user_id: USER_ID, package_id: selected }),
       })
       const data = await res.json()
       if (data.checkout_url) {
@@ -75,26 +75,26 @@ function TopUpModal({ onClose, onSuccess }) {
   return (
     <div
       style={{
-        position:        'fixed',
-        inset:           0,
-        zIndex:          1000,
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1000,
         backgroundColor: 'rgba(0,0,0,0.5)',
-        display:         'flex',
-        alignItems:      'flex-end',
-        justifyContent:  'center',
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
       }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div
         style={{
           backgroundColor: '#fef8f4',
-          borderRadius:    '32px 32px 0 0',
-          padding:         '28px 24px 40px',
-          width:           '100%',
-          maxWidth:        390,
-          display:         'flex',
-          flexDirection:   'column',
-          gap:             20,
+          borderRadius: '32px 32px 0 0',
+          padding: '28px 24px 40px',
+          width: '100%',
+          maxWidth: 390,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 20,
         }}
       >
         {/* Header */}
@@ -107,7 +107,7 @@ function TopUpModal({ onClose, onSuccess }) {
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M18 6L6 18M6 6l12 12" stroke="#8c4e35" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M18 6L6 18M6 6l12 12" stroke="#8c4e35" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </button>
         </div>
@@ -135,31 +135,31 @@ function TopUpModal({ onClose, onSuccess }) {
                 key={pkg.id}
                 onClick={() => setSelected(pkg.id)}
                 style={{
-                  display:         'flex',
-                  justifyContent:  'space-between',
-                  alignItems:      'center',
-                  padding:         '16px 20px',
-                  borderRadius:    20,
-                  border:          selected === pkg.id
-                                     ? '2px solid #8c4e35'
-                                     : '2px solid transparent',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '16px 20px',
+                  borderRadius: 20,
+                  border: selected === pkg.id
+                    ? '2px solid #8c4e35'
+                    : '2px solid transparent',
                   backgroundColor: selected === pkg.id ? '#fff3ee' : 'white',
-                  cursor:          'pointer',
-                  boxShadow:       '0 1px 4px rgba(0,0,0,0.06)',
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div
                     style={{
-                      width:           44,
-                      height:          44,
-                      borderRadius:    12,
-                      background:      selected === pkg.id
-                                         ? 'linear-gradient(135deg, #8c4e35, #e29578)'
-                                         : '#f3ede9',
-                      display:         'flex',
-                      alignItems:      'center',
-                      justifyContent:  'center',
+                      width: 44,
+                      height: 44,
+                      borderRadius: 12,
+                      background: selected === pkg.id
+                        ? 'linear-gradient(135deg, #8c4e35, #e29578)'
+                        : '#f3ede9',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill={selected === pkg.id ? 'white' : '#8c4e35'}>
@@ -177,8 +177,8 @@ function TopUpModal({ onClose, onSuccess }) {
                 </div>
                 {selected === pkg.id && (
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" fill="#8c4e35"/>
-                    <path d="M7 12l4 4 6-7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="12" cy="12" r="10" fill="#8c4e35" />
+                    <path d="M7 12l4 4 6-7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 )}
               </button>
@@ -191,11 +191,11 @@ function TopUpModal({ onClose, onSuccess }) {
           <div
             style={{
               backgroundColor: 'white',
-              borderRadius:    20,
-              padding:         '16px 20px',
-              display:         'flex',
-              justifyContent:  'space-between',
-              alignItems:      'center',
+              borderRadius: 20,
+              padding: '16px 20px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
             }}
           >
             <div>
@@ -221,22 +221,22 @@ function TopUpModal({ onClose, onSuccess }) {
           onClick={handleCheckout}
           disabled={loading || !selected || packages.length === 0}
           style={{
-            background:    loading ? '#d8c2ba' : 'linear-gradient(11deg, #8c4e35 0%, #e29578 100%)',
-            border:        'none',
-            borderRadius:  9999,
-            padding:       '18px 40px',
-            display:       'flex',
-            alignItems:    'center',
-            justifyContent:'center',
-            gap:           10,
-            cursor:        loading ? 'not-allowed' : 'pointer',
-            boxShadow:     '0 10px 15px -3px rgba(140,78,53,0.2)',
+            background: loading ? '#d8c2ba' : 'linear-gradient(11deg, #8c4e35 0%, #e29578 100%)',
+            border: 'none',
+            borderRadius: 9999,
+            padding: '18px 40px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
+            cursor: loading ? 'not-allowed' : 'pointer',
+            boxShadow: '0 10px 15px -3px rgba(140,78,53,0.2)',
           }}
         >
           {/* Stripe logo */}
           {!loading && (
             <svg width="16" height="16" viewBox="0 0 32 32" fill="white">
-              <path d="M14.5 9.8c0-1 .8-1.4 2.1-1.4 1.9 0 4.2.6 6.1 1.6V4.5C20.7 3.5 18.6 3 16.5 3 11.4 3 8 5.6 8 10.1c0 7 9.6 5.9 9.6 8.9 0 1.2-1 1.6-2.4 1.6-2.1 0-4.8-.9-6.9-2.1v5.6c2.3 1 4.7 1.5 6.9 1.5 5.2 0 8.8-2.6 8.8-7.1-.1-7.5-9.5-6.2-9.5-8.7z"/>
+              <path d="M14.5 9.8c0-1 .8-1.4 2.1-1.4 1.9 0 4.2.6 6.1 1.6V4.5C20.7 3.5 18.6 3 16.5 3 11.4 3 8 5.6 8 10.1c0 7 9.6 5.9 9.6 8.9 0 1.2-1 1.6-2.4 1.6-2.1 0-4.8-.9-6.9-2.1v5.6c2.3 1 4.7 1.5 6.9 1.5 5.2 0 8.8-2.6 8.8-7.1-.1-7.5-9.5-6.2-9.5-8.7z" />
             </svg>
           )}
           <span style={{ color: 'white', fontSize: 15, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase' }}>
@@ -260,7 +260,7 @@ export default function Wallet({ walletBalance, setWalletBalance, lastCancellati
   // Check if returning from Stripe Checkout (success or cancelled)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const status  = params.get('topup')
+    const status = params.get('topup')
     const credits = params.get('credits')
 
     if (status === 'success' && credits) {
@@ -273,7 +273,7 @@ export default function Wallet({ walletBalance, setWalletBalance, lastCancellati
             setWalletBalance(data.balance)
           }
         })
-        .catch(() => {})
+        .catch(() => { })
       // Clean up URL
       window.history.replaceState({}, '', window.location.pathname + window.location.hash)
     } else if (status === 'cancelled') {
@@ -304,13 +304,13 @@ export default function Wallet({ walletBalance, setWalletBalance, lastCancellati
         {topUpBanner && (
           <div
             style={{
-              marginTop:       20,
+              marginTop: 20,
               backgroundColor: topUpBanner.type === 'success' ? '#e6f4f1' : '#fdecea',
-              borderRadius:    20,
-              padding:         '14px 18px',
-              display:         'flex',
-              justifyContent:  'space-between',
-              alignItems:      'center',
+              borderRadius: 20,
+              padding: '14px 18px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
             }}
           >
             <p style={{ margin: 0, fontFamily: 'sans-serif', fontSize: 14, color: topUpBanner.type === 'success' ? '#00504b' : '#ba1a1a', fontWeight: 600 }}>
@@ -323,7 +323,7 @@ export default function Wallet({ walletBalance, setWalletBalance, lastCancellati
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </button>
           </div>
@@ -346,16 +346,16 @@ export default function Wallet({ walletBalance, setWalletBalance, lastCancellati
           <button
             onClick={() => setShowTopUp(true)}
             style={{
-              marginTop:   16,
-              background:  'linear-gradient(11deg, #8c4e35 0%, #e29578 100%)',
-              border:      'none',
+              marginTop: 16,
+              background: 'linear-gradient(11deg, #8c4e35 0%, #e29578 100%)',
+              border: 'none',
               borderRadius: 9999,
-              padding:     '16px 40px',
-              display:     'flex',
-              alignItems:  'center',
-              gap:         10,
-              cursor:      'pointer',
-              boxShadow:   '0 10px 15px -3px rgba(140,78,53,0.2)',
+              padding: '16px 40px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              cursor: 'pointer',
+              boxShadow: '0 10px 15px -3px rgba(140,78,53,0.2)',
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M12 2l3 7h7l-6 4 2 7-6-4-6 4 2-7-6-4h7z" /></svg>

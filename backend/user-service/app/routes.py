@@ -424,6 +424,23 @@ def get_user_contact(user_id):
     return jsonify(user.to_contact_dict()), 200
 
 
+@user_bp.route("/providers", methods=["GET"])
+def list_providers():
+    """
+    List provider accounts
+    ---
+    tags:
+      - Providers
+    produces:
+      - application/json
+    responses:
+      200:
+        description: Provider list returned
+    """
+    providers = User.query.filter_by(role="provider").order_by(User.id.asc()).all()
+    return jsonify({"providers": [provider.to_payout_dict() for provider in providers]}), 200
+
+
 @user_bp.route("/providers/<int:provider_id>/payout-details", methods=["GET"])
 def get_provider_payout_details(provider_id):
     """

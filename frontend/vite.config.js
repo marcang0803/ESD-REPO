@@ -64,6 +64,16 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
           rewrite: (path) => path.replace(/^\/user-bookings/, '/booking')
+        },
+        '/classes': {
+          target: process.env.CLASS_SERVICE_URL || 'http://localhost:5000',
+          changeOrigin: true,
+          secure: false
+        },
+        '/providers': {
+          target: process.env.USER_SERVICE_URL || 'http://localhost:5010',
+          changeOrigin: true,
+          secure: false
         }
       }
     },

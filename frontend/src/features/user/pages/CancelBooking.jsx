@@ -12,10 +12,10 @@ function LoadingSpinner() {
 export default function CancelBooking({ goBack, selectedBooking, handleCancelBooking, isCancelling, cancellationError }) {
   const bookingDetails = selectedBooking
     ? [
-        { icon: 'time', text: `${selectedBooking.date}, ${selectedBooking.time}` },
-        { icon: 'person', text: selectedBooking.instructor },
-        { icon: 'pin', text: selectedBooking.location },
-      ]
+      { icon: 'time', text: `${selectedBooking.date}, ${selectedBooking.time}` },
+      { icon: 'person', text: selectedBooking.instructor },
+      { icon: 'pin', text: selectedBooking.location },
+    ]
     : []
 
   const isWithin12Hours = () => {

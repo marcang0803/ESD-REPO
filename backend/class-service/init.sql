@@ -31,5 +31,7 @@ INSERT INTO Class (class_id, customer_id, class_name, date, start_time, duration
 (103, 1, 'Lunar Yin Yoga', '2026-04-13', '18:30:00', 60, 18, 5, 'Scheduled', 'Moon Hall, Riverfront'),
 (104, 1, 'Sunrise Flow', '2026-04-10', '07:00:00', 55, 15, 6, 'Scheduled', 'Studio B, West Mall'),
 (105, 1, 'Core Sculpt', '2026-04-09', '17:30:00', 45, 15, 3, 'Scheduled', 'Studio C, Orchard'),
-(106, 1, 'Evening Stretch', '2026-04-08', '18:00:00', 45, 12, 4, 'Scheduled', 'Skyline Studio, ION Orchard')
+(106, 1, 'Evening Stretch', '2026-04-08', '18:00:00', 45, 12, 4, 'Scheduled', 'Skyline Studio, ION Orchard'),
+(107, 2, 'Demo Pilates', '2026-04-14', '09:00:00', 60, 20, 5, 'Scheduled', 'Demo Studio'),
+(108, 2, 'Demo Strength', '2026-04-15', '18:00:00', 45, 15, 0, 'Scheduled', 'Demo Studio')
 ON DUPLICATE KEY UPDATE class_id = class_id;

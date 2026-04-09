@@ -5,6 +5,7 @@ import uuid
 import os
 import json
 import pika
+import threading
 import db
 
 app = Flask(__name__)
@@ -120,6 +121,34 @@ def get_classes():
         conn.close()
 
 
+# ─────────────────────────────────────────────
+# GET /classes/provider/<providerId>
+# ─────────────────────────────────────────────
+@app.route("/classes/provider/<int:provider_id>", methods=["GET"])
+def get_provider_classes(provider_id):
+    try:
+        conn = db.get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT class_id, customer_id, class_name, date, start_time,
+                   duration, capacity, available_slots, status, location
+            FROM Class
+            WHERE customer_id = %s
+            ORDER BY date DESC, start_time DESC
+            """,
+            (provider_id,)
+        )
+        classes = cursor.fetchall()
+        for c in classes:
+            c["date"] = str(c["date"])
+            c["start_time"] = str(c["start_time"])
+        return jsonify({"classes": classes}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 # ─────────────────────────────────────────────
 # POST /classes
 # Body: { customer_id, class_name, date, start_time, duration, capacity, location }
@@ -428,8 +457,8 @@ def release_slot(class_id):
 # ─────────────────────────────────────────────
 # RabbitMQ publisher helper
 # ─────────────────────────────────────────────
-def publish_class_completed(class_id, provider_id, total_bookings, total_credits_used):
-    """Publish a class.completed event to RabbitMQ so the Payment Service can trigger payout."""
+def publish_class_completed(class_id, provider_id, total_credits_used):
+    """Publish the class.completed event after the HTTP response is already returned."""
     try:
         credentials = pika.PlainCredentials(
             os.getenv("RABBITMQ_USERNAME", "guest"),
@@ -443,23 +472,37 @@ def publish_class_completed(class_id, provider_id, total_bookings, total_credits
         connection = pika.BlockingConnection(params)
         channel = connection.channel()
         channel.queue_declare(queue="class_completed", durable=True)
+        event_payload = {
+            "classId": class_id,
+            "providerId": provider_id,
+            "totalCreditsUsed": total_credits_used
+        }
         channel.basic_publish(
             exchange="",
             routing_key="class_completed",
-            body=json.dumps({
-                "classId": class_id,
-                "providerId": str(provider_id),
-                "totalBookings": total_bookings,
-                "totalCreditsUsed": total_credits_used,
-                "idempotency_key": f"payout-class-{class_id}"
-            }),
+            body=json.dumps(event_payload),
             properties=pika.BasicProperties(delivery_mode=2)   # persistent message
         )
         connection.close()
-        print(f"[Class Service] Published class.completed for class_id={class_id}")
+        print(f"STEP 2 [Class Service]: Published class.completed event -> {event_payload}")
     except Exception as e:
         # Log but don't fail the HTTP response — payout can be retried separately
-        print(f"[Class Service] WARNING: failed to publish class.completed event: {e}")
+        print(f"[Class Service] WARNING: failed to publish class.completed event for class_id={class_id}: {e}")
+
+
+def schedule_class_completed_publish(class_id, provider_id, total_credits_used):
+    """Defer RabbitMQ publishing until the response has been closed."""
+
+    def _publish_async():
+        print(f"STEP 2 [Class Service]: HTTP 200 already returned. Publishing payout trigger for class_id={class_id}...")
+        publish_class_completed(
+            class_id=class_id,
+            provider_id=provider_id,
+            total_credits_used=total_credits_used
+        )
+
+    worker = threading.Thread(target=_publish_async, daemon=True)
+    worker.start()
 
 
 # ─────────────────────────────────────────────
@@ -517,33 +560,33 @@ def complete_class(class_id):
         if cls["status"] == "Completed":
             return jsonify({"success": False, "message": "Class already completed"}), 400
 
+        print(f"STEP 1 [Class Service]: Updating class_id={class_id} status to 'Completed' in the database...")
         cursor.execute(
             "UPDATE Class SET status = 'Completed' WHERE class_id = %s",
             (class_id,)
         )
         conn.commit()
 
-        # Derive payout figures from bookings (capacity - available_slots = booked seats)
         total_bookings = cls["capacity"] - cls["available_slots"]
-        # Each booking costs 1 credit by default; adjust if your schema tracks actual credits
         total_credits_used = total_bookings
 
-        # Publish event so Pay Provider / Payment Service can trigger the Stripe payout
-        publish_class_completed(
-            class_id=class_id,
-            provider_id=cls["customer_id"],
-            total_bookings=total_bookings,
-            total_credits_used=total_credits_used
-        )
-
-        return jsonify({
+        response = jsonify({
             "success": True,
-            "message": "Class marked as completed",
+            "message": "Class marked as completed. Provider payout is now processing asynchronously.",
             "class_id": class_id,
             "status": "Completed",
             "total_bookings": total_bookings,
             "total_credits_used": total_credits_used
-        }), 200
+        })
+        response.call_on_close(
+            lambda: schedule_class_completed_publish(
+                class_id=class_id,
+                provider_id=cls["customer_id"],
+                total_credits_used=total_credits_used
+            )
+        )
+        print(f"STEP 1 [Class Service]: Returning HTTP 200 immediately for class_id={class_id}.")
+        return response, 200
 
     except Exception as e:
         conn.rollback()
@@ -552,6 +595,10 @@ def complete_class(class_id):
     finally:
         cursor.close()
         conn.close()
+
+# ─────────────────────────────────────────────
+# POST /classes/<class_id>/reset
+# ─────────────────────────────────────────────
 
 
 # ─────────────────────────────────────────────

@@ -23,29 +23,47 @@ CREDIT_PACKAGES = [
 
 @app.route("/process_payout", methods=["POST"])
 def provide_payout():
-    data             = request.get_json()
+    data = request.get_json() or {}
     provider_account = data.get("provider_account")
-    amount           = data.get("amount")
-    idempt_key       = data.get("idem_key")
+    amount = data.get("amount")
+    idempt_key = data.get("idempotencyKey") or data.get("idem_key")
     if not provider_account:
         return jsonify({"status": "fail", "error": "provider_account is required"}), 400
     if amount is None:
         return jsonify({"status": "fail", "error": "amount is required"}), 400
     if not idempt_key:
-        return jsonify({"status": "fail", "error": "idem_key is required"}), 400
+        return jsonify({"status": "fail", "error": "idempotencyKey is required"}), 400
     COMMISSION_RATE = 0.15
-    net_amount = round(float(amount) * (1 - COMMISSION_RATE), 2)
+    print("STEP 6 [Payment Service]: Calculating provider net amount with 15% platform commission...")
+    gross_amount = round(float(amount), 2)
+    net_amount = round(gross_amount * (1 - COMMISSION_RATE), 2)
+    commission_amount = round(gross_amount * COMMISSION_RATE, 2)
+    print(
+        f"STEP 6 [Payment Service]: Gross={gross_amount}, "
+        f"Commission={commission_amount}, Net={net_amount}"
+    )
     try:
+        print(f"STEP 7 [Payment Service]: Executing stripe.Transfer.create with idempotencyKey={idempt_key}...")
         transfer = stripe.Transfer.create(
             amount=int(net_amount * 100),
             currency="sgd",
             destination=provider_account,
             idempotency_key=idempt_key
         )
-        return jsonify({"status": "success", "transfer_id": transfer.id, "message": "Payout successful", "amount": net_amount, "commission_deducted": round(float(amount) * COMMISSION_RATE, 2)}), 200
+        print(f"STEP 7 [Payment Service]: Stripe transfer successful -> {transfer.id}")
+        return jsonify({
+            "status": "success",
+            "transfer_id": transfer.id,
+            "gross_amount": gross_amount,
+            "net_amount": net_amount,
+            "commission_deducted": commission_amount,
+            "message": "Payout successful"
+        }), 200
     except stripe.error.StripeError as e:
+        print(f"STEP 7 [Payment Service]: Stripe transfer failed -> {e}")
         return jsonify({"status": "fail", "error": str(e)}), 400
-    except Exception:
+    except Exception as e:
+        print(f"STEP 7 [Payment Service]: Unexpected payout error -> {e}")
         return jsonify({"status": "fail", "error": "Internal Server Error"}), 500
 
 @app.route("/topup/packages", methods=["GET"])
