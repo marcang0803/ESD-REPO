@@ -162,10 +162,27 @@ export default function Wallet({ walletBalance, setWalletBalance, lastCancellati
     const status  = params.get('topup')
     const credits = params.get('credits')
     if (status === 'success' && credits) {
-      setTopUpBanner({ type: 'success', credits: parseInt(credits, 10) })
-      fetch(`/wallets/${USER_ID}`)
+      const creditAmount = parseInt(credits, 10)
+      const sessionId    = params.get('session_id') || `topup-redirect-${Date.now()}`
+      setTopUpBanner({ type: 'success', credits: creditAmount })
+
+      // Credit the wallet directly — webhook may not fire on localhost
+      fetch(`/wallets/${USER_ID}/topup`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ amount: creditAmount, transaction_id: sessionId }),
+      })
         .then(r => r.json())
-        .then(data => { if (typeof setWalletBalance === 'function') setWalletBalance(data.balance) })
+        .then(data => {
+          if (typeof setWalletBalance === 'function' && Number.isFinite(data.balance)) {
+            setWalletBalance(data.balance)
+          } else {
+            // Fallback: re-fetch balance
+            return fetch(`/wallets/${USER_ID}`).then(r => r.json()).then(d => {
+              if (typeof setWalletBalance === 'function') setWalletBalance(d.balance)
+            })
+          }
+        })
         .catch(() => {})
       window.history.replaceState({}, '', window.location.pathname + window.location.hash)
     } else if (status === 'cancelled') {

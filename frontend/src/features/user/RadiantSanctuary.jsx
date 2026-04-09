@@ -123,6 +123,17 @@ export default function RadiantSanctuary({ onSwitchToAdmin }) {
   const [lastCancellation, setLastCancellation]   = useState(null)
   const [bookingError, setBookingError]     = useState('')
 
+  // ── Handle Stripe top-up redirect ────────────────────────────────────────────
+  useEffect(() => {
+    const params  = new URLSearchParams(window.location.search)
+    const status  = params.get('topup')
+    const credits = params.get('credits')
+    if (status === 'success' && credits) {
+      // Navigate to wallet tab so user sees the success banner
+      setHistory(['wallet'])
+    }
+  }, [])
+
   // ── Initial data load ──────────────────────────────────────────────────────
   useEffect(() => {
     async function loadAll() {
