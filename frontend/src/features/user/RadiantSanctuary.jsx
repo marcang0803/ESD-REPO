@@ -216,6 +216,7 @@ export default function RadiantSanctuary({ onSwitchToAdmin }) {
     pastBookings,
     practices,
     walletBalance,
+    setWalletBalance,
     isCancelling,
     cancellationError,
     lastCancellation,
