@@ -25,7 +25,7 @@ export default function ConfirmBooking({
   const startingBalance = Number.isFinite(walletBalance) ? walletBalance : null
   const backendBalanceLabel = isSelectedPracticeBooked
     ? formatCredits(startingBalance)
-    : 'Updated by backend'
+    : formatCredits(startingBalance - bookingCost)
 
   return (
     <div style={{ minHeight: '100%', background: '#1a1c1c', position: 'relative', overflowY: 'auto', overflowX: 'hidden' }}>
