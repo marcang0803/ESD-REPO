@@ -191,6 +191,8 @@ services:
       RABBITMQ_PORT: "5672"
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
+      USER_SERVICE_URL: http://user-service:5001
+      PAYMENT_SERVICE_URL: http://payment-service:5001
     depends_on:
       rabbitmq:
         condition: service_healthy

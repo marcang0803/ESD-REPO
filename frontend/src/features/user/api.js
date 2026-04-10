@@ -76,7 +76,7 @@ export async function fetchClasses(providerId) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Complete a class → triggers RabbitMQ event → Stripe payout (Scenario 3)
+// Complete a class → Stripe payout via class-service + RabbitMQ event for consumers
 // ─────────────────────────────────────────────────────────────────────────────
 export async function completeClass(classId) {
   const response = await fetch(`/classes/${classId}/complete`, {

@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- For sandbox testing use: acct_test_... from your Stripe dashboard.
 -- ─────────────────────────────────────────────
 INSERT INTO users (id, name, email, phone, role, subscription_status, payout_account_id, provider_business_name)
-VALUES (1, 'Elena Lim', 'elena.lim.provider@example.com', '+6591234567', 'provider', 'ACTIVE', 'acct_1TBWluA7QXhkPxGZ', 'Elena Wellness Studio')
+VALUES (1, 'Elena Lim', 'elena.lim.provider@example.com', '+6591234567', 'provider', 'ACTIVE', 'acct_1TKQvzA7QXgzuFT5', 'Elena Wellness Studio')
 ON DUPLICATE KEY UPDATE
     name                  = VALUES(name),
     email                 = VALUES(email),

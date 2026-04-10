@@ -34,9 +34,16 @@ def on_class_completed(ch, method, properties, body):
     class_id        = event_data.get("classId")
     provider_id     = event_data.get("providerId")
     credits_used    = event_data.get("totalCreditsUsed", 0)
-    idempotency_key = event_data.get("idempotency_key", f"payout-{class_id}")
 
-    
+    try:
+        cu = int(credits_used)
+    except (TypeError, ValueError):
+        cu = 0
+    if cu <= 0:
+        print(f"[PayProvider] Skip payout — no credits for class_id={class_id}")
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+        return
+
     try:
         user_res = requests.get(
             f"{USER_SERVICE_URL}/providers/{provider_id}/payout-details",
@@ -59,10 +66,13 @@ def on_class_completed(ch, method, properties, body):
         ch.basic_ack(delivery_tag=method.delivery_tag)
         return
 
-   
+    # Must match class-service: same key for same (class, credits, destination). Do not use the
+    # queue's idempotency_key — old messages carried legacy keys like payout-class-108 and broke Stripe.
+    idempotency_key = f"payout-v2-class-{class_id}-{cu}-{payout_account}"
+
     payment_payload = {
         "provider_account": payout_account,
-        "amount": credits_used,          # payment_service.py applies commission itself
+        "amount": cu,
         "idem_key": idempotency_key
     }
 

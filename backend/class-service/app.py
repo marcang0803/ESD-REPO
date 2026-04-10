@@ -5,7 +5,11 @@ import uuid
 import os
 import json
 import pika
+import requests
 import db
+
+USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://127.0.0.1:5010")
+PAYMENT_SERVICE_URL = os.getenv("PAYMENT_SERVICE_URL", "http://127.0.0.1:5001")
 
 app = Flask(__name__)
 
@@ -428,8 +432,8 @@ def release_slot(class_id):
 # ─────────────────────────────────────────────
 # RabbitMQ publisher helper
 # ─────────────────────────────────────────────
-def publish_class_completed(class_id, provider_id, total_bookings, total_credits_used):
-    """Publish a class.completed event to RabbitMQ so the Payment Service can trigger payout."""
+def publish_class_completed(class_id, provider_id, total_bookings, total_credits_used, idempotency_key):
+    """Publish a class.completed event to RabbitMQ (e.g. notifications). Returns True if published."""
     try:
         credentials = pika.PlainCredentials(
             os.getenv("RABBITMQ_USERNAME", "guest"),
@@ -451,15 +455,100 @@ def publish_class_completed(class_id, provider_id, total_bookings, total_credits
                 "providerId": str(provider_id),
                 "totalBookings": total_bookings,
                 "totalCreditsUsed": total_credits_used,
-                "idempotency_key": f"payout-class-{class_id}"
+                "idempotency_key": idempotency_key,
             }),
             properties=pika.BasicProperties(delivery_mode=2)   # persistent message
         )
         connection.close()
         print(f"[Class Service] Published class.completed for class_id={class_id}")
+        return True
     except Exception as e:
-        # Log but don't fail the HTTP response — payout can be retried separately
         print(f"[Class Service] WARNING: failed to publish class.completed event: {e}")
+        return False
+
+
+def trigger_stripe_payout(class_id, provider_id, credits_used):
+    """
+    Process Stripe transfer via payment-service (same flow as pay-provider consumer).
+
+    Idempotency key includes class_id, credits, and Stripe destination account so Stripe does not
+    treat a retried payout (e.g. after changing connected account) as conflicting with the first
+    request (same key, different parameters).
+    """
+    if credits_used is None or int(credits_used) <= 0:
+        return {
+            "ok": True,
+            "skipped": True,
+            "status": "no_credits",
+            "detail": "No booked credits to pay out",
+            "idempotency_key": f"payout-v2-class-{class_id}-0-none",
+        }
+
+    try:
+        user_res = requests.get(
+            f"{USER_SERVICE_URL}/providers/{provider_id}/payout-details",
+            timeout=10,
+        )
+        user_res.raise_for_status()
+        details = user_res.json()
+    except requests.RequestException as e:
+        return {
+            "ok": False,
+            "skipped": False,
+            "status": "user_service_error",
+            "detail": str(e),
+            "idempotency_key": f"payout-v2-class-{class_id}-{int(credits_used)}-nouser",
+        }
+
+    payout_account = details.get("payout_account_id")
+    if not payout_account:
+        return {
+            "ok": False,
+            "skipped": False,
+            "status": "no_payout_account",
+            "detail": "Provider has no payout_account_id configured",
+            "idempotency_key": f"payout-v2-class-{class_id}-{int(credits_used)}-noacct",
+        }
+
+    # payout-v2- prefix: avoids Stripe conflicts with legacy keys like payout-class-108
+    idempotency_key = f"payout-v2-class-{class_id}-{int(credits_used)}-{payout_account}"
+
+    try:
+        pay_res = requests.post(
+            f"{PAYMENT_SERVICE_URL}/process_payout",
+            json={
+                "provider_account": payout_account,
+                "amount": credits_used,
+                "idem_key": idempotency_key,
+            },
+            timeout=20,
+        )
+        body = pay_res.json() if pay_res.content else {}
+        if not pay_res.ok or body.get("status") != "success":
+            err = body.get("error") or body.get("message") or pay_res.text or "payment failed"
+            return {
+                "ok": False,
+                "skipped": False,
+                "status": "stripe_error",
+                "detail": str(err),
+                "idempotency_key": idempotency_key,
+            }
+        return {
+            "ok": True,
+            "skipped": False,
+            "status": "success",
+            "transfer_id": body.get("transfer_id"),
+            "amount": body.get("amount"),
+            "idempotency_key": idempotency_key,
+        }
+    except requests.RequestException as e:
+        return {
+            "ok": False,
+            "skipped": False,
+            "status": "payment_service_error",
+            "detail": str(e),
+            "idempotency_key": idempotency_key,
+        }
 
 
 # ─────────────────────────────────────────────
@@ -528,12 +617,14 @@ def complete_class(class_id):
         # Each booking costs 1 credit by default; adjust if your schema tracks actual credits
         total_credits_used = total_bookings
 
-        # Publish event so Pay Provider / Payment Service can trigger the Stripe payout
-        publish_class_completed(
+        payout = trigger_stripe_payout(class_id, cls["customer_id"], total_credits_used)
+        idempotency_key = payout.get("idempotency_key") or f"payout-v2-class-{class_id}-{total_credits_used}"
+        rabbit_ok = publish_class_completed(
             class_id=class_id,
             provider_id=cls["customer_id"],
             total_bookings=total_bookings,
-            total_credits_used=total_credits_used
+            total_credits_used=total_credits_used,
+            idempotency_key=idempotency_key,
         )
 
         return jsonify({
@@ -542,7 +633,11 @@ def complete_class(class_id):
             "class_id": class_id,
             "status": "Completed",
             "total_bookings": total_bookings,
-            "total_credits_used": total_credits_used
+            "total_credits_used": total_credits_used,
+            "payout": {
+                "stripe": payout,
+                "rabbitmq_published": rabbit_ok,
+            },
         }), 200
 
     except Exception as e:

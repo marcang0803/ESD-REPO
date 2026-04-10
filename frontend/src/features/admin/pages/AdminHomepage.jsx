@@ -148,8 +148,8 @@ function PayoutModal({ cls, onClose, onConfirm, loading, result }) {
 
         {!result && (
           <p style={{ fontFamily: fonts.sans, fontSize: 14, color: colors.textMid, margin: 0, lineHeight: 1.7 }}>
-            Confirming will publish a <code style={{ backgroundColor: colors.cardBg, padding: '1px 6px', borderRadius: 4, fontSize: 12 }}>class.completed</code> event
-            to RabbitMQ. The pay-provider service will trigger an automatic Stripe payout.
+            Confirming marks the session complete, runs the Stripe payout immediately via the payment service,
+            and publishes a <code style={{ backgroundColor: colors.cardBg, padding: '1px 6px', borderRadius: 4, fontSize: 12 }}>class.completed</code> event for any downstream consumers.
           </p>
         )}
 
@@ -338,7 +338,7 @@ function SessionCard({ cls, onPayout, alreadyPaid }) {
           }}>
             <span style={{ fontSize: 14 }}>✓</span>
             <span style={{ fontFamily: fonts.sans, fontWeight: 600, fontSize: 12, color: colors.teal }}>
-              Payout processed
+              Marked complete
             </span>
           </div>
         ) : (
@@ -415,17 +415,51 @@ export default function AdminHomepage() {
     setPayoutLoading(true)
     try {
       const data = await completeClass(selectedClass.class_id)
+      const stripe = data.payout?.stripe
+      const rabbitOk = data.payout?.rabbitmq_published
+
+      if (data.success) {
+        setPaidOutIds(prev => new Set([...prev, selectedClass.class_id]))
+      }
+
+      if (!data.payout) {
+        setPayoutResult({
+          success:            true,
+          message:            'Class marked completed. If payout does not appear in Stripe, ensure class-service, user-service, and payment-service can reach each other.',
+          total_bookings:     data.total_bookings,
+          total_credits_used: data.total_credits_used,
+        })
+        setToast({ message: 'Class completed', type: 'success' })
+        return
+      }
+
+      if (stripe?.ok) {
+        const extra = !rabbitOk ? ' (RabbitMQ publish failed — check class-service logs.)' : ''
+        setPayoutResult({
+          success:            true,
+          message:            stripe.skipped
+            ? `Class completed. ${stripe.detail ?? 'No credits to pay out.'}${extra}`
+            : `Stripe payout succeeded.${stripe.transfer_id ? ` Transfer ${stripe.transfer_id}.` : ''}${extra}`,
+          total_bookings:     data.total_bookings,
+          total_credits_used: data.total_credits_used,
+        })
+        setToast({
+          message: stripe.skipped ? 'Class completed (no payout)' : 'Payout completed',
+          type:    'success',
+        })
+        return
+      }
+
       setPayoutResult({
-        success:            true,
-        message:            'Class marked Completed. RabbitMQ event published — Stripe payout is being processed.',
+        success:            false,
+        message:            stripe?.detail ?? 'Stripe payout did not complete. The class is still marked completed.',
         total_bookings:     data.total_bookings,
         total_credits_used: data.total_credits_used,
       })
-      setPaidOutIds(prev => new Set([...prev, selectedClass.class_id]))
-      setToast({ message: 'Payout triggered! 🎉', type: 'success' })
+      setToast({ message: 'Class completed — Stripe payout failed', type: 'error' })
     } catch (err) {
       setPayoutResult({ success: false, message: err.message })
-      setToast({ message: 'Payout failed — check console', type: 'error' })
+      setToast({ message: 'Could not complete class', type: 'error' })
     } finally {
       setPayoutLoading(false)
     }
